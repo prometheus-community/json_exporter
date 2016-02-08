@@ -2,8 +2,8 @@ package jsonexporter
 
 import (
 	"fmt"
-	"github.com/NickSardo/jsonpath"
 	log "github.com/Sirupsen/logrus"
+	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
 	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"io/ioutil"
 	"net/http"
