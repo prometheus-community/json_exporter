@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+GO=go
+PACKAGE_LOCATION_GIT_REMOTE=origin
+PACKAGE_LOCATION=$(git config --get "remote.$PACKAGE_LOCATION_GIT_REMOTE.url" | sed 's/^[^@]*@//' | sed 's/^.*:\/\///' | sed 's/\.git$//')
+
+PROJECT_ROOT_DIR=$(cd $(dirname $0); pwd)
+GOPATH=$PROJECT_ROOT_DIR/build
+
+LOCAL_PACKAGE_PATH=$GOPATH/src/$(echo "$PACKAGE_LOCATION" | tr ':' '/')
+LOCAL_PACKAGE_DIR=$(dirname $LOCAL_PACKAGE_PATH)
+
+mkdir -p $LOCAL_PACKAGE_DIR
+ln -sfh $PROJECT_ROOT_DIR $LOCAL_PACKAGE_PATH
+
+export GOBIN="$GOPATH/bin"
+export GOPATH
+
+exec $GO "$@"

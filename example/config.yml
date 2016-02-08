@@ -1,0 +1,14 @@
+- name: example_global_value
+  path: $.counter
+  labels:
+    environment: beta # static label
+
+- name: example_value
+  type: object
+  path: $.values[*]?(@.state == "ACTIVE")
+  labels:
+    environment: beta # static label
+    id: $.id          # dynamic label
+  values:
+    active: 1      # static value
+    count: $.count # dynamic value

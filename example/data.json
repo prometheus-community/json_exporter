@@ -1,0 +1,20 @@
+{
+    "counter": 1234,
+    "values": [
+        {
+            "id": "id-A",
+            "count": 1,
+            "state": "ACTIVE"
+        },
+        {
+            "id": "id-B",
+            "count": 2,
+            "state": "INACTIVE"
+        },
+        {
+            "id": "id-C",
+            "count": 3,
+            "state": "ACTIVE"
+        },
+    ]
+}
