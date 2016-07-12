@@ -2,7 +2,7 @@ package jsonexporter
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/prometheus/client_golang/prometheus"
 )
