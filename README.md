@@ -70,4 +70,4 @@ example_value_count{environment="beta",id="id-C"} 3
 
 See Also
 ========
-- [nicksardo/jsonpath](https://github.com/nicksardo/jsonpath) : For syntax reference of JSONPath
+- [kawamuray/jsonpath](https://github.com/kawamuray/jsonpath#path-syntax) : For syntax reference of JSONPath
