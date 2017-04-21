@@ -8,34 +8,34 @@ import (
 )
 
 type ScrapeType struct {
-	Configure  func(*Config, *harness.MetricRegistry)
-	NewScraper func(*Config) (JsonScraper, error)
+	Configure  func(*Mapping, *harness.MetricRegistry)
+	NewScraper func(*Mapping) (JsonScraper, error)
 }
 
 var ScrapeTypes = map[string]*ScrapeType{
 	"object": {
-		Configure: func(config *Config, reg *harness.MetricRegistry) {
-			for subName := range config.Values {
-				name := harness.MakeMetricName(config.Name, subName)
+		Configure: func(mapping *Mapping, reg *harness.MetricRegistry) {
+			for subName := range mapping.Values {
+				name := harness.MakeMetricName(mapping.Name, subName)
 				reg.Register(
 					name,
 					prometheus.NewGaugeVec(prometheus.GaugeOpts{
 						Name: name,
-						Help: config.Help + " - " + subName,
-					}, config.labelNames()),
+						Help: mapping.Help + " - " + subName,
+					}, mapping.labelNames()),
 				)
 			}
 		},
 		NewScraper: NewObjectScraper,
 	},
 	"value": {
-		Configure: func(config *Config, reg *harness.MetricRegistry) {
+		Configure: func(mapping *Mapping, reg *harness.MetricRegistry) {
 			reg.Register(
-				config.Name,
+				mapping.Name,
 				prometheus.NewGaugeVec(prometheus.GaugeOpts{
-					Name: config.Name,
-					Help: config.Help,
-				}, config.labelNames()),
+					Name: mapping.Name,
+					Help: mapping.Help,
+				}, mapping.labelNames()),
 			)
 		},
 		NewScraper: NewValueScraper,
@@ -57,24 +57,24 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		configPath = args[1]
 	)
 
-	configs, err := loadConfig(configPath)
+	config, err := loadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	scrapers := make([]JsonScraper, len(configs))
-	for i, config := range configs {
-		tpe := ScrapeTypes[config.Type]
+	scrapers := make([]JsonScraper, len(config.Mappings))
+	for i, mapping := range config.Mappings {
+		tpe := ScrapeTypes[mapping.Type]
 		if tpe == nil {
-			return nil, fmt.Errorf("unknown scrape type;type:<%s>", config.Type)
+			return nil, fmt.Errorf("unknown scrape type;type:<%s>", mapping.Type)
 		}
-		tpe.Configure(config, reg)
-		scraper, err := tpe.NewScraper(config)
+		tpe.Configure(mapping, reg)
+		scraper, err := tpe.NewScraper(mapping)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create scraper;name:<%s>,err:<%s>", config.Name, err)
+			return nil, fmt.Errorf("failed to create scraper;name:<%s>,err:<%s>", mapping.Name, err)
 		}
 		scrapers[i] = scraper
 	}
 
-	return NewCollector(endpoint, scrapers), nil
+	return NewCollector(endpoint, config.Headers, scrapers), nil
 }

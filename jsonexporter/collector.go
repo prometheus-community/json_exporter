@@ -12,6 +12,7 @@ import (
 type Collector struct {
 	Endpoint string
 	scrapers []JsonScraper
+	Headers  map[string]string
 }
 
 func compilePath(path string) (*jsonpath.Path, error) {
@@ -44,15 +45,22 @@ func compilePaths(paths map[string]string) (map[string]*jsonpath.Path, error) {
 	return compiledPaths, nil
 }
 
-func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
+func NewCollector(endpoint string, headers map[string]string, scrapers []JsonScraper) *Collector {
 	return &Collector{
 		Endpoint: endpoint,
+		Headers: headers,
 		scrapers: scrapers,
 	}
 }
 
 func (col *Collector) fetchJson() ([]byte, error) {
-	resp, err := http.Get(col.Endpoint)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", col.Endpoint, nil)
+	for name, value := range col.Headers{
+		req.Header.Add(name, value)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
 	}

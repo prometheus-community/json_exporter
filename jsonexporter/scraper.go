@@ -14,18 +14,18 @@ type JsonScraper interface {
 }
 
 type ValueScraper struct {
-	*Config
+	*Mapping
 	valueJsonPath *jsonpath.Path
 }
 
-func NewValueScraper(config *Config) (JsonScraper, error) {
-	valuepath, err := compilePath(config.Path)
+func NewValueScraper(mapping *Mapping) (JsonScraper, error) {
+	valuepath, err := compilePath(mapping.Path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse path;path:<%s>,err:<%s>", config.Path, err)
+		return nil, fmt.Errorf("failed to parse path;path:<%s>,err:<%s>", mapping.Path, err)
 	}
 
 	scraper := &ValueScraper{
-		Config:        config,
+		Mapping:       mapping,
 		valueJsonPath: valuepath,
 	}
 	return scraper, nil
@@ -89,17 +89,17 @@ type ObjectScraper struct {
 	valueJsonPaths map[string]*jsonpath.Path
 }
 
-func NewObjectScraper(config *Config) (JsonScraper, error) {
-	valueScraper, err := NewValueScraper(config)
+func NewObjectScraper(mapping *Mapping) (JsonScraper, error) {
+	valueScraper, err := NewValueScraper(mapping)
 	if err != nil {
 		return nil, err
 	}
 
-	labelPaths, err := compilePaths(config.Labels)
+	labelPaths, err := compilePaths(mapping.Labels)
 	if err != nil {
 		return nil, err
 	}
-	valuePaths, err := compilePaths(config.Values)
+	valuePaths, err := compilePaths(mapping.Values)
 	if err != nil {
 		return nil, err
 	}
@@ -158,13 +158,13 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 			labels[name] = string(value)
 		}
 
-		for name, configValue := range obsc.Values {
+		for name, mappingValue := range obsc.Values {
 			var metricValue float64
 			path := obsc.valueJsonPaths[name]
 
 			if path == nil {
 				// Static value
-				value, err := obsc.parseValue([]byte(configValue))
+				value, err := obsc.parseValue([]byte(mappingValue))
 				if err != nil {
 					log.Errorf("could not use configured value as float number;name:<%s>,err:<%s>", err)
 					continue
