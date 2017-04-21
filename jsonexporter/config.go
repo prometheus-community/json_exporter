@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+    Endpoint string            `yaml:"endpoint"`
     Headers  map[string]string `yaml:"headers"`
     Mappings []*Mapping        `yaml:"mappings"`
 }

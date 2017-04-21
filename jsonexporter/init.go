@@ -47,14 +47,13 @@ var DefaultScrapeType = "value"
 func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error) {
 	args := c.Args()
 
-	if len(args) < 2 {
+	if len(args) < 1 {
 		cli.ShowAppHelp(c)
 		return nil, fmt.Errorf("not enough arguments")
 	}
 
 	var (
-		endpoint   = args[0]
-		configPath = args[1]
+		configPath = args[0]
 	)
 
 	config, err := loadConfig(configPath)
@@ -76,5 +75,5 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		scrapers[i] = scraper
 	}
 
-	return NewCollector(endpoint, config.Headers, scrapers), nil
+	return NewCollector(config.Endpoint, config.Headers, scrapers), nil
 }

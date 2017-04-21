@@ -7,7 +7,7 @@ import (
 
 func main() {
 	opts := harness.NewExporterOpts("json_exporter", jsonexporter.Version)
-	opts.Usage = "[OPTIONS] HTTP_ENDPOINT CONFIG_PATH"
+	opts.Usage = "[OPTIONS] CONFIG_PATH"
 	opts.Init = jsonexporter.Init
 	harness.Main(opts)
 }
