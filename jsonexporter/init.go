@@ -7,6 +7,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type Module struct {
+	endpoint  string
+	headers   map[string]string
+	scrapers  []JsonScraper
+}
+
 type ScrapeType struct {
 	Configure  func(*Mapping, *harness.MetricRegistry)
 	NewScraper func(*Mapping) (JsonScraper, error)
@@ -56,24 +62,28 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		configPath = args[0]
 	)
 
-	config, err := loadConfig(configPath)
+	moduleConfigs, err := loadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	scrapers := make([]JsonScraper, len(config.Mappings))
-	for i, mapping := range config.Mappings {
-		tpe := ScrapeTypes[mapping.Type]
-		if tpe == nil {
-			return nil, fmt.Errorf("unknown scrape type;type:<%s>", mapping.Type)
+	modules := make([]*Module, len(moduleConfigs))
+	for i, moduleConfig := range moduleConfigs {
+        modules[i] = &Module{endpoint: moduleConfig.Endpoint, headers: moduleConfig.Headers}
+		modules[i].scrapers = make([]JsonScraper, len(moduleConfig.Mappings))
+		for j, mapping := range moduleConfig.Mappings {
+			tpe := ScrapeTypes[mapping.Type]
+			if tpe == nil {
+				return nil, fmt.Errorf("unknown scrape type;type:<%s>", mapping.Type)
+			}
+			tpe.Configure(mapping, reg)
+			scraper, err := tpe.NewScraper(mapping)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create scraper;name:<%s>,err:<%s>", mapping.Name, err)
+			}
+			modules[i].scrapers[j] = scraper
 		}
-		tpe.Configure(mapping, reg)
-		scraper, err := tpe.NewScraper(mapping)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create scraper;name:<%s>,err:<%s>", mapping.Name, err)
-		}
-		scrapers[i] = scraper
 	}
 
-	return NewCollector(config.Endpoint, config.Headers, scrapers), nil
+	return NewCollector(modules), nil
 }

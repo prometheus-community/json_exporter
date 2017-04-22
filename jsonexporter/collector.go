@@ -10,9 +10,7 @@ import (
 )
 
 type Collector struct {
-	Endpoint string
-	scrapers []JsonScraper
-	Headers  map[string]string
+	modules []*Module
 }
 
 func compilePath(path string) (*jsonpath.Path, error) {
@@ -45,24 +43,22 @@ func compilePaths(paths map[string]string) (map[string]*jsonpath.Path, error) {
 	return compiledPaths, nil
 }
 
-func NewCollector(endpoint string, headers map[string]string, scrapers []JsonScraper) *Collector {
+func NewCollector(modules []*Module) *Collector {
 	return &Collector{
-		Endpoint: endpoint,
-		Headers: headers,
-		scrapers: scrapers,
+		modules: modules,
 	}
 }
 
-func (col *Collector) fetchJson() ([]byte, error) {
+func (module *Module) fetchJson() ([]byte, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", col.Endpoint, nil)
-	for name, value := range col.Headers{
+	req, err := http.NewRequest("GET", module.endpoint, nil)
+	for name, value := range module.headers{
 		req.Header.Add(name, value)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
+		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", module.endpoint, err)
 	}
 	defer resp.Body.Close()
 
@@ -75,16 +71,18 @@ func (col *Collector) fetchJson() ([]byte, error) {
 }
 
 func (col *Collector) Collect(reg *harness.MetricRegistry) {
-	json, err := col.fetchJson()
-	if err != nil {
-		log.Error(err)
-		return
-	}
+    for _, module := range col.modules {
+        json, err := module.fetchJson()
+        if err != nil {
+            log.Error(err)
+            return
+        }
 
-	for _, scraper := range col.scrapers {
-		if err := scraper.Scrape(json, reg); err != nil {
-			log.Errorf("error while scraping json;err:<%s>", err)
-			continue
-		}
-	}
+        for _, scraper := range module.scrapers {
+            if err := scraper.Scrape(json, reg); err != nil {
+                log.Errorf("error while scraping json;err:<%s>", err)
+                continue
+            }
+        }
+    }
 }

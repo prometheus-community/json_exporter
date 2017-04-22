@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 )
 
-type Config struct {
+type ModuleConfig struct {
     Endpoint string            `yaml:"endpoint"`
     Headers  map[string]string `yaml:"headers"`
     Mappings []*Mapping        `yaml:"mappings"`
@@ -29,25 +29,27 @@ func (mapping *Mapping) labelNames() []string {
 	return labelNames
 }
 
-func loadConfig(configPath string) (*Config, error) {
+func loadConfig(configPath string) ([]*ModuleConfig, error) {
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config;path:<%s>,err:<%s>", configPath, err)
 	}
 
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	var moduleConfigs []*ModuleConfig
+	if err := yaml.Unmarshal(data, &moduleConfigs); err != nil {
 		return nil, fmt.Errorf("failed to parse yaml;err:<%s>", err)
 	}
 	// Complete defaults
-	for _, mapping := range config.Mappings {
-		if mapping.Type == "" {
-			mapping.Type = DefaultScrapeType
-		}
-		if mapping.Help == "" {
-			mapping.Help = mapping.Name
+	for _, moduleConfig := range moduleConfigs {
+		for _, mapping := range moduleConfig.Mappings {
+			if mapping.Type == "" {
+				mapping.Type = DefaultScrapeType
+			}
+			if mapping.Help == "" {
+				mapping.Help = mapping.Name
+			}
 		}
 	}
 
-	return &config, nil
+	return moduleConfigs, nil
 }
