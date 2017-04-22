@@ -36,25 +36,27 @@ $ cat example/data.json
 }
 
 $ cat example/config.yml
-- name: example_global_value
-  path: $.counter
-  labels:
-    environment: beta # static label
+- endpoint: http://localhost:8000/example/data.json
+  mappings:
+    - name: example_global_value
+      path: $.counter
+      labels:
+        environment: beta # static label
 
-- name: example_value
-  type: object
-  path: $.values[*]?(@.state == "ACTIVE")
-  labels:
-    environment: beta # static label
-    id: $.id          # dynamic label
-  values:
-    active: 1      # static value
-    count: $.count # dynamic value
+    - name: example_value
+      type: object
+      path: $.values[*]?(@.state == "ACTIVE")
+      labels:
+        environment: beta # static label
+        id: $.id          # dynamic label
+      values:
+        active: 1      # static value
+        count: $.count # dynamic value
 
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
 
-$ ./json_exporter http://localhost:8000/example/data.json example/config.yml &
+$ ./json_exporter example/config.yml &
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_global_value>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_active>
 INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_count>
@@ -66,6 +68,31 @@ example_value_active{environment="beta",id="id-A"} 1
 example_value_active{environment="beta",id="id-C"} 1
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
+```
+
+Headers & Additional Endpoints
+=============
+An example configuration for multiple endpoints, with headers:
+
+```
+- endpoint: http://example.com/endpoint-1
+  headers:
+  - Content-Type: application/json
+  - API-KEY: asdf
+  mappings:
+  - name: example_global
+    path: $.example
+- endpoint: http://example.com/endpoint-2
+  headers:
+  - API-KEY: foobar
+  mappings:
+  - name: example_value
+    type: object
+    path: $.example[*]
+    labels:
+      id: $.id
+    values:
+      default: 1
 ```
 
 See Also
