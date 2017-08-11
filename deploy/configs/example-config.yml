@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+data:
+  config.yml: |
+    - name: metric_path_on_prometheus
+      path: $.Metric.Path.OnJson
+metadata:
+  name: config-metrics

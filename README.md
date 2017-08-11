@@ -6,8 +6,17 @@ A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSO
 Build
 =====
 ```sh
-./gow get .
-./gow build -o json_exporter .
+docker build . -t json-exporter
+```
+
+Run
+====
+```sh
+docker run -d \
+  -p 7979:7979 \
+  -v <config-file>:/app/config/config.yml \
+  -e ENDPOINT_JSON="<JSON-HTTP-ENDPOINT>" \
+  json-exporter:latest
 ```
 
 Example Usage

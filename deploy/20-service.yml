@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "7979"
+    prometheus.io/scrape: "true"
+  name: metrics
+  labels:
+    app: metrics
+spec:
+  ports:
+  - port: 7979
+    name: http
+    targetPort: 7979
+  selector:
+    app: metrics
+  type: ClusterIP
