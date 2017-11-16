@@ -58,10 +58,6 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		configPath = args[1]
 	)
 
-	if args[2] {
-		insecure = args[2]
-	}
-
 	configs, err := loadConfig(configPath)
 	if err != nil {
 		return nil, err

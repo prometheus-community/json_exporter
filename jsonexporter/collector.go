@@ -49,7 +49,7 @@ func compilePaths(paths map[string]string) (map[string]*jsonpath.Path, error) {
 func NewCollector(endpoint string, insecure bool, scrapers []JsonScraper) *Collector {
 	return &Collector{
 		Endpoint: endpoint,
-                Insecure: insecure,
+		Insecure: insecure,
 		scrapers: scrapers,
 	}
 }
