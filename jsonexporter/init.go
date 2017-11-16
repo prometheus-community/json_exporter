@@ -2,6 +2,7 @@ package jsonexporter
 
 import (
 	"fmt"
+        "flag"
 	"github.com/urfave/cli"
 	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,7 +47,7 @@ var DefaultScrapeType = "value"
 
 func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error) {
 	args := c.Args()
-
+	insecure := c.Bool("insecure")
 	if len(args) < 2 {
 		cli.ShowAppHelp(c)
 		return nil, fmt.Errorf("not enough arguments")
@@ -56,6 +57,10 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		endpoint   = args[0]
 		configPath = args[1]
 	)
+
+	if args[2] {
+		insecure = args[2]
+	}
 
 	configs, err := loadConfig(configPath)
 	if err != nil {
@@ -76,5 +81,5 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		scrapers[i] = scraper
 	}
 
-	return NewCollector(endpoint, scrapers), nil
+	return NewCollector(endpoint,insecure, scrapers), nil
 }
