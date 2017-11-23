@@ -12,7 +12,7 @@ import (
 
 type Collector struct {
 	Endpoint string
-        Insecure bool
+    Insecure bool
 	scrapers []JsonScraper
 }
 
