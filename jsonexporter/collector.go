@@ -68,7 +68,7 @@ func (col *Collector) fetchJson() ([]byte, error) {
 }
 
 func (col *Collector) tidyJson(b []byte) ([]byte) {
-	return bytes.Replace(b, []byte(": NaN"), []byte(": \"NaN\""), -1)
+	return bytes.Replace(b, []byte(": NaN"), []byte(": null"), -1)
 }
 
 func (col *Collector) Collect(reg *harness.MetricRegistry) {
