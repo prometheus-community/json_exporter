@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kawamuray/prometheus-exporter-harness/harness"
-	"github.com/JalfResi/prometheus-json-exporter/jsonexporter"
+	"github.com/kawamuray/prometheus-json-exporter/jsonexporter"
 )
 
 func main() {
