@@ -53,8 +53,6 @@ func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
 }
 
 func (col *Collector) fetchJson() ([]byte, error) {
-	log.Infof("Fetching JSON...")
-
 	resp, err := http.Get(col.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
@@ -66,14 +64,11 @@ func (col *Collector) fetchJson() ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response body;err:<%s>", err)
 	}
 
-	log.Infof("Tidying...")
-
 	return col.tidyJson(data), nil
 }
 
 func (col *Collector) tidyJson(b []byte) ([]byte) {
-	log.Infof("Replacing NaN with null")
-	return bytes.Replace(b, []byte(": NaN"), []byte(": null"), -1)
+	return bytes.Replace(b, []byte(": NaN"), []byte(": \"NaN\""), -1)
 }
 
 func (col *Collector) Collect(reg *harness.MetricRegistry) {
