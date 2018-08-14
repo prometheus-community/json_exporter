@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JalfResi/prometheus-exporter-harness/harness"
+	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/JalfResi/prometheus-json-exporter/jsonexporter"
 )
 
