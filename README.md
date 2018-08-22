@@ -51,6 +51,22 @@ $ cat example/config.yml
     active: 1      # static value
     count: $.count # dynamic value
 
+
+$ ./json_exporter example/data.json example/config.yml
+INFO[2018-08-22T22:52:42+01:00] metric registered;name:<example_global_value>
+INFO[2018-08-22T22:52:42+01:00] metric registered;name:<example_value_active>
+INFO[2018-08-22T22:52:42+01:00] metric registered;name:<example_value_count>
+
+$ curl http://localhost:7979/metrics | grep ^example
+example_global_value{environment="beta"} 1234
+example_value_active{environment="beta",id="id-A"} 1
+example_value_active{environment="beta",id="id-C"} 1
+example_value_count{environment="beta",id="id-A"} 1
+example_value_count{environment="beta",id="id-C"} 3
+
+or
+
+
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
 
