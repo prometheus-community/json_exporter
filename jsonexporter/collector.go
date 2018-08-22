@@ -2,11 +2,13 @@ package jsonexporter
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
 	"github.com/kawamuray/prometheus-exporter-harness/harness"
-	"io/ioutil"
-	"net/http"
 )
 
 type Collector struct {
@@ -51,8 +53,28 @@ func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
 	}
 }
 
+//TODO: make all this less boilerplate
 func (col *Collector) fetchJson() ([]byte, error) {
+	//check if file exist, if its true, we assume endpoint is a file
+	_, err := os.Stat(col.Endpoint)
+	if err == nil {
+		jsonData, err := os.Open(col.Endpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch json file from endpoint; endpoint:<%s>,err:<%s>", col.Endpoint, err)
+		}
+		defer jsonData.Close()
+
+		data, err := ioutil.ReadAll(jsonData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read json file;err:<%s>", err)
+		}
+
+		return data, nil
+	}
+
+	// if check file failed, we try to fetch from the http endpoint
 	resp, err := http.Get(col.Endpoint)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
 	}
