@@ -1,7 +1,7 @@
 FROM golang:1.11 as builder
 WORKDIR /go/src/github.com/coveo/prometheus-json-exporter/
 ADD  . .
-RUN ./gow get . && ./gow build -o json-exporter
+RUN ./gow get . && ./gow build -o json-exporter --ldflags "-w -linkmode external -extldflags '-static'"
 
 
 FROM alpine:3.8

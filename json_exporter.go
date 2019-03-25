@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/coveo/prometheus-json-exporter/jsonexporter"
+	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/urfave/cli"
 )
 
