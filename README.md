@@ -1,17 +1,17 @@
 json_exporter
 ========================
+[![CircleCI](https://circleci.com/gh/prometheus-community/json_exporter.svg?style=svg)](https://circleci.com/gh/prometheus-community/json_exporter)
 
 A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSONPath.
 
-Build
-=====
+# Build
+
 ```sh
-./gow get .
-./gow build -o json_exporter .
+make build
 ```
 
-Example Usage
-=============
+# Example Usage
+
 ```sh
 $ cat example/data.json
 {
@@ -68,7 +68,16 @@ example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
 ```
 
-See Also
-========
+# Docker
+
+```console
+docker run \
+  -v config.yml:/config.yml
+  json_exporter \
+    http://example.com/target.json \
+    /config.yml
+```
+
+# See Also
 - [kawamuray/jsonpath](https://github.com/kawamuray/jsonpath#path-syntax) : For syntax reference of JSONPath.
   Originally forked from nicksardo/jsonpath(now is https://github.com/NodePrime/jsonpath).

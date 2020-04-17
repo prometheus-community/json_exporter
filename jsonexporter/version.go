@@ -13,4 +13,8 @@
 
 package jsonexporter
 
-const Version = "0.0.2"
+import (
+	"github.com/prometheus/common/version"
+)
+
+var Version = version.Version
