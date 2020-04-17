@@ -1,10 +1,23 @@
+// Copyright 2020 The Prometheus Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jsonexporter
 
 import (
 	"fmt"
 
+	"github.com/prometheus-community/json_exporter/harness"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus-community/json-exporter/harness"
 	"github.com/urfave/cli"
 )
 
@@ -49,7 +62,7 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 	args := c.Args()
 
 	if len(args) < 2 {
-		cli.ShowAppHelp(c)
+		cli.ShowAppHelp(c) //nolint:errcheck
 		return nil, fmt.Errorf("not enough arguments")
 	}
 
