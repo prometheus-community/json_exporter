@@ -62,7 +62,7 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 	args := c.Args()
 
 	if len(args) < 2 {
-		cli.ShowAppHelp(c)
+		cli.ShowAppHelp(c) //nolint:errcheck
 		return nil, fmt.Errorf("not enough arguments")
 	}
 

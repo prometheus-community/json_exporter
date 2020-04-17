@@ -85,7 +85,7 @@ func (exp *exporter) main(c *cli.Context) {
 		collector.Collect(registry)
 		interval := c.Int("interval")
 		go func() {
-			for _ = range time.Tick(time.Duration(interval) * time.Second) {
+			for range time.Tick(time.Duration(interval) * time.Second) {
 				if exp.ResetOnTick {
 					registry.Reset()
 				}

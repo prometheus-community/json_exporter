@@ -57,7 +57,7 @@ func (vs *ValueScraper) parseValue(bytes []byte) (float64, error) {
 func (vs *ValueScraper) forTargetValue(data []byte, handle func(*jsonpath.Result)) error {
 	eval, err := jsonpath.EvalPathsInBytes(data, []*jsonpath.Path{vs.valueJsonPath})
 	if err != nil {
-		return fmt.Errorf("failed to eval jsonpath;path:<%s>,json:<%s>", vs.valueJsonPath, data)
+		return fmt.Errorf("failed to eval jsonpath;path:<%v>,json:<%s>", vs.valueJsonPath, data)
 	}
 
 	for {
@@ -74,7 +74,7 @@ func (vs *ValueScraper) Scrape(data []byte, reg *harness.MetricRegistry) error {
 	isFirst := true
 	return vs.forTargetValue(data, func(result *jsonpath.Result) {
 		if !isFirst {
-			log.Infof("ignoring non-first value;path:<%s>", vs.valueJsonPath)
+			log.Infof("ignoring non-first value;path:<%v>", vs.valueJsonPath)
 			return
 		}
 		isFirst = false
@@ -90,13 +90,13 @@ func (vs *ValueScraper) Scrape(data []byte, reg *harness.MetricRegistry) error {
 		case jsonpath.JsonNull:
 			value = math.NaN()
 		default:
-			log.Warnf("skipping not numerical result;path:<%s>,value:<%s>",
+			log.Warnf("skipping not numerical result;path:<%v>,value:<%s>",
 				vs.valueJsonPath, result.Value)
 			return
 		}
 		if err != nil {
 			// Should never happen.
-			log.Errorf("could not parse numerical value as float;path:<%s>,value:<%s>",
+			log.Errorf("could not parse numerical value as float;path:<%v>,value:<%s>",
 				vs.valueJsonPath, result.Value)
 			return
 		}
@@ -161,7 +161,7 @@ func (obsc *ObjectScraper) extractFirstValue(data []byte, path *jsonpath.Path) (
 func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) error {
 	return obsc.forTargetValue(data, func(result *jsonpath.Result) {
 		if result.Type != jsonpath.JsonObject && result.Type != jsonpath.JsonArray {
-			log.Warnf("skipping not structual result;path:<%s>,value:<%s>",
+			log.Warnf("skipping not structual result;path:<%v>,value:<%s>",
 				obsc.valueJsonPath, result.Value)
 			return
 		}
@@ -170,7 +170,7 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 		for name, path := range obsc.labelJsonPaths {
 			firstResult, err := obsc.extractFirstValue(result.Value, path)
 			if err != nil {
-				log.Warnf("could not find value for label path;path:<%s>,json:<%s>,err:<%s>", path, result.Value, err)
+				log.Warnf("could not find value for label path;path:<%v>,json:<%s>,err:<%s>", path, result.Value, err)
 				continue
 			}
 			value := firstResult.Value
@@ -189,7 +189,7 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 				// Static value
 				value, err := obsc.parseValue([]byte(configValue))
 				if err != nil {
-					log.Errorf("could not use configured value as float number;name:<%s>,err:<%s>", err)
+					log.Errorf("could not use configured value as float number;err:<%s>", err)
 					continue
 				}
 				metricValue = value
@@ -197,7 +197,7 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 				// Dynamic value
 				firstResult, err := obsc.extractFirstValue(result.Value, path)
 				if err != nil {
-					log.Warnf("could not find value for value path;path:<%s>,json:<%s>,err:<%s>", path, result.Value, err)
+					log.Warnf("could not find value for value path;path:<%v>,json:<%s>,err:<%s>", path, result.Value, err)
 					continue
 				}
 
@@ -211,13 +211,13 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 				case jsonpath.JsonNull:
 					value = math.NaN()
 				default:
-					log.Warnf("skipping not numerical result;path:<%s>,value:<%s>",
+					log.Warnf("skipping not numerical result;path:<%v>,value:<%s>",
 						obsc.valueJsonPath, result.Value)
 					continue
 				}
 				if err != nil {
 					// Should never happen.
-					log.Errorf("could not parse numerical value as float;path:<%s>,value:<%s>",
+					log.Errorf("could not parse numerical value as float;path:<%v>,value:<%s>",
 						obsc.valueJsonPath, firstResult.Value)
 					continue
 				}
