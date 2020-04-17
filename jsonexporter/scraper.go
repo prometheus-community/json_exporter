@@ -80,6 +80,7 @@ func (vs *ValueScraper) Scrape(data []byte, reg *harness.MetricRegistry) error {
 		isFirst = false
 
 		var value float64
+		var boolValue bool
 		var err error
 		switch result.Type {
 		case jsonpath.JsonNumber:
@@ -89,6 +90,12 @@ func (vs *ValueScraper) Scrape(data []byte, reg *harness.MetricRegistry) error {
 			value, err = vs.parseValue(result.Value[1 : len(result.Value)-1])
 		case jsonpath.JsonNull:
 			value = math.NaN()
+		case jsonpath.JsonBool:
+			if boolValue, err = strconv.ParseBool(string(result.Value)); boolValue {
+				value = 1
+			} else {
+				value = 0
+			}
 		default:
 			log.Warnf("skipping not numerical result;path:<%v>,value:<%s>",
 				vs.valueJsonPath, result.Value)
