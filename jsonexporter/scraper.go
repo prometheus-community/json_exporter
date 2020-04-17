@@ -5,10 +5,10 @@ import (
 	"math"
 	"strconv"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
-	"github.com/kawamuray/prometheus-exporter-harness/harness"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
+	"github.com/prometheus-community/json-exporter/harness"
 )
 
 type JsonScraper interface {
