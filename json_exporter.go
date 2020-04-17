@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kawamuray/prometheus-exporter-harness/harness"
-	"github.com/kawamuray/prometheus-json-exporter/jsonexporter"
+	"github.com/prometheus-community/json_exporter/harness"
+	"github.com/prometheus-community/json_exporter/jsonexporter"
 )
 
 func main() {

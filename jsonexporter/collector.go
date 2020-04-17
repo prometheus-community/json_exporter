@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
+	"github.com/prometheus-community/json_exporter/harness"
 	log "github.com/sirupsen/logrus"
-	"github.com/prometheus-community/json-exporter/harness"
 )
 
 type Collector struct {

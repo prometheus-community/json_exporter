@@ -3,8 +3,8 @@ package jsonexporter
 import (
 	"fmt"
 
+	"github.com/prometheus-community/json_exporter/harness"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus-community/json-exporter/harness"
 	"github.com/urfave/cli"
 )
 

@@ -18,7 +18,7 @@ jobs:
     - prometheus/setup_environment
     - run: make
     - prometheus/store_artifact:
-        file: json-exporter
+        file: json_exporter
 
   publish_master:
     executor: golang
@@ -50,7 +50,7 @@ jobs:
 
 workflows:
   version: 2
-  json-exporter:
+  json_exporter:
     jobs:
     - test:
         filters:
