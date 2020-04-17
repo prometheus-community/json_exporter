@@ -2,9 +2,10 @@ package jsonexporter
 
 import (
 	"fmt"
-	"github.com/urfave/cli"
-	"github.com/kawamuray/prometheus-exporter-harness/harness"
+
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus-community/json-exporter/harness"
+	"github.com/urfave/cli"
 )
 
 type ScrapeType struct {
