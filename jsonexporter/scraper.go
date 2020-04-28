@@ -29,18 +29,18 @@ type JsonScraper interface {
 }
 
 type ValueScraper struct {
-	*Config
+	*Metric
 	valueJsonPath *jsonpath.Path
 }
 
-func NewValueScraper(config *Config) (JsonScraper, error) {
-	valuepath, err := compilePath(config.Path)
+func NewValueScraper(metric *Metric) (JsonScraper, error) {
+	valuepath, err := compilePath(metric.Path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse path;path:<%s>,err:<%s>", config.Path, err)
+		return nil, fmt.Errorf("failed to parse path;path:<%s>,err:<%s>", metric.Path, err)
 	}
 
 	scraper := &ValueScraper{
-		Config:        config,
+		Metric:        metric,
 		valueJsonPath: valuepath,
 	}
 	return scraper, nil
@@ -119,17 +119,17 @@ type ObjectScraper struct {
 	valueJsonPaths map[string]*jsonpath.Path
 }
 
-func NewObjectScraper(config *Config) (JsonScraper, error) {
-	valueScraper, err := NewValueScraper(config)
+func NewObjectScraper(metric *Metric) (JsonScraper, error) {
+	valueScraper, err := NewValueScraper(metric)
 	if err != nil {
 		return nil, err
 	}
 
-	labelPaths, err := compilePaths(config.Labels)
+	labelPaths, err := compilePaths(metric.Labels)
 	if err != nil {
 		return nil, err
 	}
-	valuePaths, err := compilePaths(config.Values)
+	valuePaths, err := compilePaths(metric.Values)
 	if err != nil {
 		return nil, err
 	}
