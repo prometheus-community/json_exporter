@@ -1,0 +1,28 @@
+ARG ARCH="amd64"
+ARG OS="linux"
+FROM golang:1.14-alpine as builder
+
+ARG ARCH
+ARG OS
+
+WORKDIR /build
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY . ./
+RUN CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -a -tags netgo -o json_exporter-${OS}-${ARCH}
+
+ARG ARCH
+ARG OS
+FROM quay.io/prometheus/busybox-${OS}-${ARCH}:glibc
+LABEL maintainer="The Prometheus Authors <prometheus-developers@googlegroups.com>"
+
+ARG ARCH
+ARG OS
+
+COPY --from=builder /build/json_exporter-${OS}-${ARCH} /bin/json_exporter
+
+EXPOSE      7979
+USER        nobody
+ENTRYPOINT  [ "/bin/json_exporter" ]

@@ -10,6 +10,13 @@ A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSO
 make build
 ```
 
+Instead, if you just manually want to build a Docker image, use a multi-stage build:
+
+```sh
+docker build -t json-exporter:dev -f ./Dockerfile.multi --build-arg ARCH="amd64" --build-arg OS="linux" .
+```
+
+
 # Example Usage
 
 ```sh
