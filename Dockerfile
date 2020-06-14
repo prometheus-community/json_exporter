@@ -9,4 +9,4 @@ COPY .build/${OS}-${ARCH}/json_exporter /bin/json_exporter
 
 EXPOSE      7979
 USER        nobody
-ENTRYPOINT  [ "/bin/bind_exporter" ]
+ENTRYPOINT  [ "/bin/json_exporter" ]
