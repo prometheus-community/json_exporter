@@ -209,6 +209,7 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 				}
 
 				var value float64
+				var boolValue bool
 				switch firstResult.Type {
 				case jsonpath.JsonNumber:
 					value, err = obsc.parseValue(firstResult.Value)
@@ -217,6 +218,12 @@ func (obsc *ObjectScraper) Scrape(data []byte, reg *harness.MetricRegistry) erro
 					value, err = obsc.parseValue(firstResult.Value[1 : len(firstResult.Value)-1])
 				case jsonpath.JsonNull:
 					value = math.NaN()
+				case jsonpath.JsonBool:
+					if boolValue, err = strconv.ParseBool(string(firstResult.Value)); boolValue {
+						value = 1.0
+					} else {
+						value = 0.0
+					}
 				default:
 					log.Warnf("skipping not numerical result;path:<%v>,value:<%s>",
 						obsc.valueJsonPath, result.Value)
