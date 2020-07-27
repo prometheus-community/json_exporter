@@ -2,7 +2,7 @@
 version: 2.1
 
 orbs:
-  prometheus: prometheus/prometheus@0.4.0
+  prometheus: prometheus/prometheus@0.8.0
 
 executors:
   # This must match .promu.yml.
@@ -20,34 +20,6 @@ jobs:
     - prometheus/store_artifact:
         file: json_exporter
 
-  publish_master:
-    executor: golang
-
-    steps:
-    - prometheus/setup_build_environment
-    - prometheus/publish_images:
-        registry: docker.io
-        organization: prometheuscommunity
-        login_variable: DOCKER_LOGIN
-        password_variable: DOCKER_PASSWORD
-
-  publish_release:
-    executor: golang
-
-    steps:
-    - prometheus/setup_build_environment
-    - run: promu crossbuild tarballs
-    - run: promu checksum .tarballs
-    - run: promu release .tarballs
-    - store_artifacts:
-        path: .tarballs
-        destination: releases
-    - prometheus/publish_release_images:
-        registry: docker.io
-        organization: prometheuscommunity
-        login_variable: DOCKER_LOGIN
-        password_variable: DOCKER_PASSWORD
-
 workflows:
   version: 2
   json_exporter:
@@ -61,16 +33,20 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - publish_master:
+    - prometheus/publish_master:
         context: org-context
+        docker_hub_organization: prometheuscommunity
+        quay_io_organization: prometheuscommunity
         requires:
         - test
         - build
         filters:
           branches:
             only: master
-    - publish_release:
+    - prometheus/publish_release:
         context: org-context
+        docker_hub_organization: prometheuscommunity
+        quay_io_organization: prometheuscommunity
         requires:
         - test
         - build
