@@ -73,6 +73,9 @@ func (col *Collector) fetchJson() ([]byte, error) {
 	for key, value := range col.headers {
 		req.Header.Add(key, value)
 	}
+	if req.Header.Get("Accept") == "" {
+		req.Header.Add("Accept", "application/json")
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
