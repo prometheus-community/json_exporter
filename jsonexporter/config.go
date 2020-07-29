@@ -15,8 +15,9 @@ package jsonexporter
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Metric contains values that define a metric
@@ -29,13 +30,9 @@ type Metric struct {
 	Values map[string]string
 }
 
-// Header containes a key and a value for a header
-type Header map[string]string
-
-// Config contains metrics and headers defining
-// a configuration
+// Config contains metrics and headers defining a configuration
 type Config struct {
-	Headers []Header         
+	Headers map[string]string
 	Metrics []Metric
 }
 

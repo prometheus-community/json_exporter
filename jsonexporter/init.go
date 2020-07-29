@@ -82,8 +82,8 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		if tpe == nil {
 			return nil, fmt.Errorf("unknown scrape type;type:<%s>", metric.Type)
 		}
-		tpe.Configure(&metric, reg)
-		scraper, err := tpe.NewScraper(&metric)
+		tpe.Configure(&config.Metrics[i], reg)
+		scraper, err := tpe.NewScraper(&config.Metrics[i])
 		if err != nil {
 			return nil, fmt.Errorf("failed to create scraper;name:<%s>,err:<%s>", metric.Name, err)
 		}
