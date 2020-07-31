@@ -81,7 +81,7 @@ example_value_count{environment="beta",id="id-C"} 3
 ```console
 docker run \
   -v config.yml:/config.yml
-  json_exporter \
+  quay.io/prometheuscommunity/json-exporter \
     http://example.com/target.json \
     /config.yml
 ```
