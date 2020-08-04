@@ -11,8 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package harness
+package internal
 
-type Collector interface {
-	Collect(*MetricRegistry)
-}
+import (
+	"github.com/prometheus/common/version"
+)
+
+var Version = version.Version

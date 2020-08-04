@@ -11,6 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package harness
+package internal
 
-const Version = "0.0.1"
+import (
+	"log"
+
+	"github.com/prometheus-community/json_exporter/config"
+	"github.com/urfave/cli"
+)
+
+func Init(c *cli.Context) {
+	args := c.Args()
+
+	if len(args) < 1 {
+		cli.ShowAppHelp(c) //nolint:errcheck
+		log.Fatalf("Not enought arguments")
+	}
+
+	var (
+		configPath = args[0]
+	)
+
+	_, err := config.LoadConfig(configPath)
+
+	if err != nil {
+		log.Fatal("Failed to load config")
+	}
+}

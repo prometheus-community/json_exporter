@@ -11,10 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jsonexporter
+package main
 
 import (
-	"github.com/prometheus/common/version"
+	"os"
+
+	"github.com/prometheus-community/json_exporter/cmd"
 )
 
-var Version = version.Version
+func main() {
+	err := cmd.MakeApp().Run(os.Args)
+	if err != nil {
+		os.Exit(1)
+	}
+}
