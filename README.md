@@ -68,7 +68,11 @@ example_value_boolean{environment="beta",id="id-A"} 1
 example_value_boolean{environment="beta",id="id-C"} 0
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
+
+# To test through prometheus:
+$ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
 ```
+Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
 # Docker
 
