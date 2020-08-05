@@ -14,18 +14,21 @@
 package internal
 
 import (
-	"log"
+	"os"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/urfave/cli"
 )
 
-func Init(c *cli.Context) {
+func Init(logger log.Logger, c *cli.Context) {
 	args := c.Args()
 
 	if len(args) < 1 {
 		cli.ShowAppHelp(c) //nolint:errcheck
-		log.Fatalf("Not enought arguments")
+		level.Error(logger).Log("msg", "Not enough arguments")
+		os.Exit(1)
 	}
 
 	var (
@@ -35,6 +38,7 @@ func Init(c *cli.Context) {
 	_, err := config.LoadConfig(configPath)
 
 	if err != nil {
-		log.Fatal("Failed to load config")
+		level.Error(logger).Log("msg", "Failed to load config")
+		os.Exit(1)
 	}
 }

@@ -18,13 +18,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus-community/json_exporter/internal"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/version"
 	"github.com/urfave/cli"
 )
 
@@ -47,7 +51,6 @@ func MakeApp() *cli.App {
 
 	app := cli.NewApp()
 	app.Name = "json_exporter"
-	app.Version = internal.Version
 	app.Usage = "A prometheus exporter for scraping metrics from JSON REST API endpoints"
 	app.UsageText = "[OPTIONS] CONFIG_PATH"
 	app.Action = main
@@ -57,30 +60,36 @@ func MakeApp() *cli.App {
 }
 
 func main(c *cli.Context) {
-	setupLogging(c.String("log-level"))
 
-	internal.Init(c)
+	promlogConfig := &promlog.Config{}
+	logger := promlog.New(promlogConfig)
+
+	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
+
+	internal.Init(logger, c)
 
 	config, err := config.LoadConfig(c.Args()[0])
 	if err != nil {
-		log.Fatal(err)
+		level.Error(logger).Log("msg", "Error loading config", "err", err)
+		os.Exit(1)
 	}
-	configJson, err := json.MarshalIndent(config, "", "\t")
+	configJson, err := json.Marshal(config)
 	if err != nil {
-		log.Errorf("Failed to marshal loaded config to JSON. ERROR: '%s'", err)
+		level.Error(logger).Log("msg", "Failed to marshal config to JOSN", "err", err)
 	}
-	log.Infof("Config:\n%s", string(configJson))
+	level.Info(logger).Log("msg", "Loaded config file", "config", configJson)
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
-		probeHandler(w, req, config)
+		probeHandler(w, req, logger, config)
 	})
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", c.Int("port")), nil); err != nil {
-		log.Fatal(err)
+		level.Error(logger).Log("msg", "failed to start the server", "err", err)
 	}
 }
 
-func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) {
+func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, config config.Config) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(config.Global.TimeoutSeconds*float64(time.Second)))
 	defer cancel()
@@ -90,7 +99,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) 
 
 	metrics, err := internal.CreateMetricsList(registry, config)
 	if err != nil {
-		log.Fatalf("Failed to create metrics from config. Error: %s", err)
+		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
 	}
 
 	probeSuccessGauge := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -112,31 +121,21 @@ func probeHandler(w http.ResponseWriter, r *http.Request, config config.Config) 
 	registry.MustRegister(probeSuccessGauge)
 	registry.MustRegister(probeDurationGauge)
 
-	data, err := internal.FetchJson(ctx, target, config.Headers)
+	data, err := internal.FetchJson(ctx, logger, target, config.Headers)
 	if err != nil {
-		log.Error(err)
+		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err)
 		duration := time.Since(start).Seconds()
-		log.Errorf("Probe failed. duration_seconds: %f", duration)
+		level.Error(logger).Log("msg", "Probe failed", "duration_seconds", duration)
 	} else {
-		internal.Scrape(metrics, data)
+		internal.Scrape(logger, metrics, data)
 
 		duration := time.Since(start).Seconds()
 		probeDurationGauge.Set(duration)
 		probeSuccessGauge.Set(1)
+		//level.Info(logger).Log("msg", "Probe succeeded", "duration_seconds", duration) // Too noisy
 	}
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 
-}
-
-func setupLogging(level string) {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	logLevel, err := log.ParseLevel(level)
-	if err != nil {
-		log.Fatalf("could not set log level to '%s';err:<%s>", level, err)
-	}
-	log.SetLevel(logLevel)
 }

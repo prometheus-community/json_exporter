@@ -16,8 +16,6 @@ package config
 import (
 	"io/ioutil"
 
-	log "github.com/sirupsen/logrus"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -61,12 +59,10 @@ func LoadConfig(configPath string) (Config, error) {
 	var config Config
 	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		log.Errorf("Failed to load config: %s, Error: %s", configPath, err)
 		return config, err
 	}
 
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		log.Errorf("Failed to parse YAML: %s", err)
 		return config, err
 	}
 
