@@ -64,28 +64,28 @@ func main(c *cli.Context) {
 	promlogConfig := &promlog.Config{}
 	logger := promlog.New(promlogConfig)
 
-	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info())
-	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
+	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info()) //nolint:errcheck
+	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())    //nolint:errcheck
 
 	internal.Init(logger, c)
 
 	config, err := config.LoadConfig(c.Args()[0])
 	if err != nil {
-		level.Error(logger).Log("msg", "Error loading config", "err", err)
+		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
 		os.Exit(1)
 	}
 	configJson, err := json.Marshal(config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to marshal config to JOSN", "err", err)
+		level.Error(logger).Log("msg", "Failed to marshal config to JOSN", "err", err) //nolint:errcheck
 	}
-	level.Info(logger).Log("msg", "Loaded config file", "config", configJson)
+	level.Info(logger).Log("msg", "Loaded config file", "config", configJson) //nolint:errcheck
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req, logger, config)
 	})
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", c.Int("port")), nil); err != nil {
-		level.Error(logger).Log("msg", "failed to start the server", "err", err)
+		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
 	}
 }
 
@@ -99,7 +99,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	metrics, err := internal.CreateMetricsList(registry, config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
+		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
 	}
 
 	probeSuccessGauge := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -123,9 +123,9 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	data, err := internal.FetchJson(ctx, logger, target, config.Headers)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err)
+		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err) //nolint:errcheck
 		duration := time.Since(start).Seconds()
-		level.Error(logger).Log("msg", "Probe failed", "duration_seconds", duration)
+		level.Error(logger).Log("msg", "Probe failed", "duration_seconds", duration) //nolint:errcheck
 	} else {
 		internal.Scrape(logger, metrics, data)
 

@@ -43,7 +43,7 @@ func Scrape(logger log.Logger, collectors []JsonGaugeCollector, json []byte) {
 			// TODO: Better handling/logging for this scenario
 			floatValue, err := extractValue(logger, json, collector.KeyJsonPath)
 			if err != nil {
-				level.Error(logger).Log("msg", "Failed to extract float value for metric", "path", collector.KeyJsonPath, "err", err)
+				level.Error(logger).Log("msg", "Failed to extract float value for metric", "path", collector.KeyJsonPath, "err", err) //nolint:errcheck
 				continue
 			}
 
@@ -51,20 +51,20 @@ func Scrape(logger log.Logger, collectors []JsonGaugeCollector, json []byte) {
 		} else { // ScrapeType is 'object'
 			path, err := compilePath(collector.KeyJsonPath)
 			if err != nil {
-				level.Error(logger).Log("msg", "Failed to compile path", "path", collector.KeyJsonPath, "err", err)
+				level.Error(logger).Log("msg", "Failed to compile path", "path", collector.KeyJsonPath, "err", err) //nolint:errcheck
 				continue
 			}
 
 			eval, err := jsonpath.EvalPathsInBytes(json, []*jsonpath.Path{path})
 			if err != nil {
-				level.Error(logger).Log("msg", "Failed to create evaluator for json path", "path", collector.KeyJsonPath, "err", err)
+				level.Error(logger).Log("msg", "Failed to create evaluator for json path", "path", collector.KeyJsonPath, "err", err) //nolint:errcheck
 				continue
 			}
 			for {
 				if result, ok := eval.Next(); ok {
 					floatValue, err := extractValue(logger, result.Value, collector.ValueJsonPath)
 					if err != nil {
-						level.Error(logger).Log("msg", "Failed to extract value", "path", collector.ValueJsonPath, "err", err)
+						level.Error(logger).Log("msg", "Failed to extract value", "path", collector.ValueJsonPath, "err", err) //nolint:errcheck
 						continue
 					}
 
@@ -118,7 +118,7 @@ func extractValue(logger log.Logger, json []byte, path string) (float64, error) 
 		if eval.Error != nil {
 			return floatValue, fmt.Errorf("Failed to evaluate json. ERROR: '%s', PATH: '%s', JSON: '%s'", eval.Error, path, string(json))
 		} else {
-			level.Debug(logger).Log("msg", "Path not found", "path", path, "json", string(json))
+			level.Debug(logger).Log("msg", "Path not found", "path", path, "json", string(json)) //nolint:errcheck
 			return floatValue, fmt.Errorf("Could not find path. PATH: '%s'", path)
 		}
 	}
@@ -139,14 +139,14 @@ func extractLabels(logger log.Logger, json []byte, l map[string]string) map[stri
 		// Dynamic value
 		p, err := compilePath(path)
 		if err != nil {
-			level.Error(logger).Log("msg", "Failed to compile path for label", "path", path, "label", label, "err", err)
+			level.Error(logger).Log("msg", "Failed to compile path for label", "path", path, "label", label, "err", err) //nolint:errcheck
 			labels[label] = ""
 			continue
 		}
 
 		eval, err := jsonpath.EvalPathsInBytes(json, []*jsonpath.Path{p})
 		if err != nil {
-			level.Error(logger).Log("msg", "Failed to create evaluator for json", "path", path, "err", err)
+			level.Error(logger).Log("msg", "Failed to create evaluator for json", "path", path, "err", err) //nolint:errcheck
 			labels[label] = ""
 			continue
 		}
@@ -154,10 +154,10 @@ func extractLabels(logger log.Logger, json []byte, l map[string]string) map[stri
 		result, ok := eval.Next()
 		if result == nil || !ok {
 			if eval.Error != nil {
-				level.Error(logger).Log("msg", "Failed to evaluate", "label", label, "json", string(json), "err", eval.Error)
+				level.Error(logger).Log("msg", "Failed to evaluate", "label", label, "json", string(json), "err", eval.Error) //nolint:errcheck
 			} else {
-				level.Warn(logger).Log("msg", "Label path not found in json", "path", path, "label", label)
-				level.Debug(logger).Log("msg", "Label path not found in json", "path", path, "label", label, "json", string(json))
+				level.Warn(logger).Log("msg", "Label path not found in json", "path", path, "label", label)                        //nolint:errcheck
+				level.Debug(logger).Log("msg", "Label path not found in json", "path", path, "label", label, "json", string(json)) //nolint:errcheck
 			}
 			continue
 		}
@@ -177,7 +177,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, headers 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	req = req.WithContext(ctx)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create request", "err", err)
+		level.Error(logger).Log("msg", "Failed to create request", "err", err) //nolint:errcheck
 		return nil, err
 	}
 

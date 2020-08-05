@@ -26,8 +26,8 @@ func Init(logger log.Logger, c *cli.Context) {
 	args := c.Args()
 
 	if len(args) < 1 {
-		cli.ShowAppHelp(c) //nolint:errcheck
-		level.Error(logger).Log("msg", "Not enough arguments")
+		cli.ShowAppHelp(c)                                     //nolint:errcheck
+		level.Error(logger).Log("msg", "Not enough arguments") //nolint:errcheck
 		os.Exit(1)
 	}
 
@@ -38,7 +38,7 @@ func Init(logger log.Logger, c *cli.Context) {
 	_, err := config.LoadConfig(configPath)
 
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to load config")
+		level.Error(logger).Log("msg", "Failed to load config") //nolint:errcheck
 		os.Exit(1)
 	}
 }
