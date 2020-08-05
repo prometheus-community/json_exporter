@@ -14,10 +14,7 @@
 package internal
 
 import (
-	"context"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 
 	"github.com/go-kit/kit/log"
@@ -170,33 +167,4 @@ func extractLabels(logger log.Logger, json []byte, l map[string]string) map[stri
 		}
 	}
 	return labels
-}
-
-func FetchJson(ctx context.Context, logger log.Logger, endpoint string, headers map[string]string) ([]byte, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", endpoint, nil)
-	req = req.WithContext(ctx)
-	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create request", "err", err) //nolint:errcheck
-		return nil, err
-	}
-
-	for key, value := range headers {
-		req.Header.Add(key, value)
-	}
-	if req.Header.Get("Accept") == "" {
-		req.Header.Add("Accept", "application/json")
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", endpoint, err)
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body;err:<%s>", err)
-	}
-
-	return data, nil
 }

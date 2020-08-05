@@ -14,14 +14,9 @@
 package main
 
 import (
-	"os"
-
 	"github.com/prometheus-community/json_exporter/cmd"
 )
 
 func main() {
-	err := cmd.MakeApp().Run(os.Args)
-	if err != nil {
-		os.Exit(1)
-	}
+	cmd.Run()
 }

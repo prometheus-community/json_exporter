@@ -34,18 +34,24 @@ $ cat example/data.json
             "count": 3,
             "some_boolean": false,
             "state": "ACTIVE"
-        },
-    ]
+        }
+    ],
+    "location": "mars"
 }
 
-$ cat example/config.yml
+$ cat examples/config.yml
+---
+metrics:
 - name: example_global_value
   path: $.counter
+  help: Example of a top-level global value scrape in the json
   labels:
     environment: beta # static label
+    location: $.location          # dynamic label
 
 - name: example_value
   type: object
+  help: Example of sub-level value scrapes from a json
   path: $.values[*]?(@.state == "ACTIVE")
   labels:
     environment: beta # static label
@@ -55,10 +61,13 @@ $ cat example/config.yml
     count: $.count # dynamic value
     boolean: $.some_boolean
 
+headers:
+  X-Dummy: my-test-header
+
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
 
-$ ./json_exporter examples/config.yml &
+$ ./json_exporter --config.file examples/config.yml &
 
 $ curl "http://localhost:7979/probe?target=http://localhost:8000/examples/data.json" | grep ^example
 example_global_value{environment="beta",location="mars"} 1234
@@ -78,10 +87,9 @@ Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_
 
 ```console
 docker run \
-  -v config.yml:/config.yml
+  -v $PWD/examples/config.yml:/config.yml
   quay.io/prometheuscommunity/json-exporter \
-    http://example.com/target.json \
-    /config.yml
+    --config.file /config.yml
 ```
 
 # See Also

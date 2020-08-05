@@ -16,7 +16,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -28,48 +27,32 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
-	"github.com/urfave/cli"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	defaultOpts = []cli.Flag{
-		cli.IntFlag{
-			Name:  "port",
-			Usage: "The port number used to expose metrics via http",
-			Value: 7979,
-		},
-		cli.StringFlag{
-			Name:  "log-level",
-			Usage: "Set Logging level",
-			Value: "info",
-		},
-	}
+	configFile    = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
+	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":7979").String()
+	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default().Bool()
 )
 
-func MakeApp() *cli.App {
-
-	app := cli.NewApp()
-	app.Name = "json_exporter"
-	app.Usage = "A prometheus exporter for scraping metrics from JSON REST API endpoints"
-	app.UsageText = "[OPTIONS] CONFIG_PATH"
-	app.Action = main
-	app.Flags = defaultOpts
-
-	return app
-}
-
-func main(c *cli.Context) {
+func Run() {
 
 	promlogConfig := &promlog.Config{}
+
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	kingpin.Version(version.Print("json_exporter"))
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
 
 	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info()) //nolint:errcheck
 	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())    //nolint:errcheck
 
-	internal.Init(logger, c)
-
-	config, err := config.LoadConfig(c.Args()[0])
+	level.Info(logger).Log("msg", "Loading config file", "file", *configFile) //nolint:errcheck
+	config, err := config.LoadConfig(*configFile)
 	if err != nil {
 		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
 		os.Exit(1)
@@ -78,13 +61,17 @@ func main(c *cli.Context) {
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to marshal config to JOSN", "err", err) //nolint:errcheck
 	}
-	level.Info(logger).Log("msg", "Loaded config file", "config", configJson) //nolint:errcheck
+	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJson)) //nolint:errcheck
+
+	if *configCheck {
+		os.Exit(0)
+	}
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req, logger, config)
 	})
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", c.Int("port")), nil); err != nil {
+	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
 		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
 	}
 }
