@@ -93,10 +93,6 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		Name: "probe_success",
 		Help: "Displays whether or not the probe was a success",
 	})
-	probeDurationGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "probe_duration_seconds",
-		Help: "Returns how long the probe took to complete in seconds",
-	})
 
 	target := r.URL.Query().Get("target")
 	if target == "" {
@@ -104,20 +100,14 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	start := time.Now()
 	registry.MustRegister(probeSuccessGauge)
-	registry.MustRegister(probeDurationGauge)
 
 	data, err := internal.FetchJson(ctx, logger, target, config)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err) //nolint:errcheck
-		duration := time.Since(start).Seconds()
-		level.Error(logger).Log("msg", "Probe failed", "duration_seconds", duration) //nolint:errcheck
 	} else {
 		internal.Scrape(logger, metrics, data)
 
-		duration := time.Since(start).Seconds()
-		probeDurationGauge.Set(duration)
 		probeSuccessGauge.Set(1)
 		//level.Info(logger).Log("msg", "Probe succeeded", "duration_seconds", duration) // Too noisy
 	}
