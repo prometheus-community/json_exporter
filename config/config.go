@@ -16,6 +16,7 @@ package config
 import (
 	"io/ioutil"
 
+	pconfig "github.com/prometheus/common/config"
 	"gopkg.in/yaml.v2"
 )
 
@@ -38,13 +39,14 @@ const (
 
 // Config contains metrics and headers defining a configuration
 type Config struct {
-	Headers map[string]string
-	Metrics []Metric
-	Global  GlobalConfig
+	Headers          map[string]string        `yaml:"headers,omitempty"`
+	Metrics          []Metric                 `yaml:"metrics"`
+	Global           GlobalConfig             `yaml:"global_config,omitempty"`
+	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
 }
 
 type GlobalConfig struct {
-	TimeoutSeconds float64
+	TimeoutSeconds float64 `yaml:"timeout_seconds,omitempty"`
 }
 
 func (metric *Metric) LabelNames() []string {

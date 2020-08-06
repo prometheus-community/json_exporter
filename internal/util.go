@@ -27,6 +27,7 @@ import (
 	"github.com/kawamuray/jsonpath"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
+	pconfig "github.com/prometheus/common/config"
 )
 
 func MakeMetricName(parts ...string) string {
@@ -106,8 +107,13 @@ func CreateMetricsList(r *prometheus.Registry, c config.Config) ([]JsonGaugeColl
 	return metrics, nil
 }
 
-func FetchJson(ctx context.Context, logger log.Logger, endpoint string, headers map[string]string) ([]byte, error) {
-	client := &http.Client{}
+func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
+	httpClientConfig := config.HTTPClientConfig
+	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
+	if err != nil {
+		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err)
+		return nil, err
+	}
 	req, err := http.NewRequest("GET", endpoint, nil)
 	req = req.WithContext(ctx)
 	if err != nil {
@@ -115,7 +121,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, headers 
 		return nil, err
 	}
 
-	for key, value := range headers {
+	for key, value := range config.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {

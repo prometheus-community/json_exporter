@@ -108,7 +108,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	registry.MustRegister(probeSuccessGauge)
 	registry.MustRegister(probeDurationGauge)
 
-	data, err := internal.FetchJson(ctx, logger, target, config.Headers)
+	data, err := internal.FetchJson(ctx, logger, target, config)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err) //nolint:errcheck
 		duration := time.Since(start).Seconds()

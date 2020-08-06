@@ -21,3 +21,16 @@ metrics:
 
 headers:
   X-Dummy: my-test-header
+
+# For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
+#
+# http_client_config:
+#   tls_config:
+#     insecure_skip_verify: false
+#   basic_auth:
+#     username: myuser
+#     #password: veryverysecret
+#     password_file: /tmp/mysecret.txt
+#
+# global_config:
+#   timeout_seconds: 30 // defaults to 10
