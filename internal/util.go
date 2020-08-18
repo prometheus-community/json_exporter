@@ -15,6 +15,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -129,13 +130,17 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", endpoint, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
+	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body;err:<%s>", err)
+		return nil, err
 	}
 
 	return data, nil

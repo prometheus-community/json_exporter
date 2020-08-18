@@ -89,27 +89,17 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
 	}
 
-	probeSuccessGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "probe_success",
-		Help: "Displays whether or not the probe was a success",
-	})
-
 	target := r.URL.Query().Get("target")
 	if target == "" {
 		http.Error(w, "Target parameter is missing", http.StatusBadRequest)
 		return
 	}
 
-	registry.MustRegister(probeSuccessGauge)
-
 	data, err := internal.FetchJson(ctx, logger, target, config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to fetch JSON response", "err", err) //nolint:errcheck
+		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 	} else {
 		internal.Scrape(logger, metrics, data)
-
-		probeSuccessGauge.Set(1)
-		//level.Info(logger).Log("msg", "Probe succeeded", "duration_seconds", duration) // Too noisy
 	}
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
