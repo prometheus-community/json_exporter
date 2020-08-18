@@ -49,14 +49,6 @@ type GlobalConfig struct {
 	TimeoutSeconds float64 `yaml:"timeout_seconds,omitempty"`
 }
 
-func (metric *Metric) LabelNames() []string {
-	var labelNames []string
-	for name := range metric.Labels {
-		labelNames = append(labelNames, name)
-	}
-	return labelNames
-}
-
 func LoadConfig(configPath string) (Config, error) {
 	var config Config
 	data, err := ioutil.ReadFile(configPath)

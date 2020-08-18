@@ -71,35 +71,59 @@ func parseValue(bytes []byte) (float64, error) {
 	return value, nil
 }
 
-func CreateMetricsList(r *prometheus.Registry, c config.Config) ([]JsonGaugeCollector, error) {
-	var metrics []JsonGaugeCollector
+func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
+	var metrics []JsonMetric
 	for _, metric := range c.Metrics {
 		switch metric.Type {
 		case config.ValueScrape:
-			jsonCollector := JsonGaugeCollector{
-				GaugeVec: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-					Name: metric.Name,
-					Help: metric.Help,
-				}, metric.LabelNames()),
-				KeyJsonPath:    metric.Path,
-				LabelsJsonPath: metric.Labels,
+			constLabels := make(map[string]string)
+			var variableLabels, variableLabelsValues []string
+			for k, v := range metric.Labels {
+				if len(v) < 1 || v[0] != '$' {
+					// Static value
+					constLabels[k] = v
+				} else {
+					variableLabels = append(variableLabels, k)
+					variableLabelsValues = append(variableLabelsValues, v)
+				}
 			}
-			r.MustRegister(jsonCollector)
-			metrics = append(metrics, jsonCollector)
+			jsonMetric := JsonMetric{
+				Desc: prometheus.NewDesc(
+					metric.Name,
+					metric.Help,
+					variableLabels,
+					constLabels,
+				),
+				KeyJsonPath:     metric.Path,
+				LabelsJsonPaths: variableLabelsValues,
+			}
+			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
 			for subName, valuePath := range metric.Values {
 				name := MakeMetricName(metric.Name, subName)
-				jsonCollector := JsonGaugeCollector{
-					GaugeVec: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-						Name: name,
-						Help: name,
-					}, metric.LabelNames()),
-					KeyJsonPath:    metric.Path,
-					ValueJsonPath:  valuePath,
-					LabelsJsonPath: metric.Labels,
+				constLabels := make(map[string]string)
+				var variableLabels, variableLabelsValues []string
+				for k, v := range metric.Labels {
+					if len(v) < 1 || v[0] != '$' {
+						// Static value
+						constLabels[k] = v
+					} else {
+						variableLabels = append(variableLabels, k)
+						variableLabelsValues = append(variableLabelsValues, v)
+					}
 				}
-				r.MustRegister(jsonCollector)
-				metrics = append(metrics, jsonCollector)
+				jsonMetric := JsonMetric{
+					Desc: prometheus.NewDesc(
+						name,
+						metric.Help,
+						variableLabels,
+						constLabels,
+					),
+					KeyJsonPath:     metric.Path,
+					ValueJsonPath:   valuePath,
+					LabelsJsonPaths: variableLabelsValues,
+				}
+				metrics = append(metrics, jsonMetric)
 			}
 		default:
 			return nil, fmt.Errorf("Unknown metric type: '%s', for metric: '%s'", metric.Type, metric.Name)
@@ -112,7 +136,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	httpClientConfig := config.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true)
 	if err != nil {
-		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err)
+		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
 		return nil, err
 	}
 	req, err := http.NewRequest("GET", endpoint, nil)

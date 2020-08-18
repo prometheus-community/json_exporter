@@ -84,10 +84,13 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	registry := prometheus.NewPedanticRegistry()
 
-	metrics, err := internal.CreateMetricsList(registry, config)
+	metrics, err := internal.CreateMetricsList(config)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
 	}
+
+	jsonMetricCollector := internal.JsonMetricCollector{JsonMetrics: metrics}
+	jsonMetricCollector.Logger = logger
 
 	target := r.URL.Query().Get("target")
 	if target == "" {
@@ -98,10 +101,12 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	data, err := internal.FetchJson(ctx, logger, target, config)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
-	} else {
-		internal.Scrape(logger, metrics, data)
+		return
 	}
 
+	jsonMetricCollector.Data = data
+
+	registry.MustRegister(jsonMetricCollector)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
 
