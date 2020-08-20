@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -78,7 +77,7 @@ func Run() {
 
 func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, config config.Config) {
 
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(config.Global.TimeoutSeconds*float64(time.Second)))
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	r = r.WithContext(ctx)
 

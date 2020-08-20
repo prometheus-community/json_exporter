@@ -41,12 +41,7 @@ const (
 type Config struct {
 	Headers          map[string]string        `yaml:"headers,omitempty"`
 	Metrics          []Metric                 `yaml:"metrics"`
-	Global           GlobalConfig             `yaml:"global_config,omitempty"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
-}
-
-type GlobalConfig struct {
-	TimeoutSeconds float64 `yaml:"timeout_seconds,omitempty"`
 }
 
 func LoadConfig(configPath string) (Config, error) {
@@ -69,9 +64,6 @@ func LoadConfig(configPath string) (Config, error) {
 		if config.Metrics[i].Help == "" {
 			config.Metrics[i].Help = config.Metrics[i].Name
 		}
-	}
-	if config.Global.TimeoutSeconds == 0 {
-		config.Global.TimeoutSeconds = 10
 	}
 
 	return config, nil
