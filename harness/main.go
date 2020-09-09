@@ -30,6 +30,10 @@ var (
 			Usage: "Set Logging level",
 			Value: "info",
 		},
+		cli.BoolFlag{
+			Name:  "tls.insecure-skip-verify",
+			Usage: "Ignore certificate verifications",
+		},
 	}
 
 	defaultTickOpt = cli.IntFlag{

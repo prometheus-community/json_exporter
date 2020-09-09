@@ -60,7 +60,7 @@ var DefaultScrapeType = "value"
 
 func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error) {
 	args := c.Args()
-
+	insecure := c.Bool("tls.insecure-skip-verify")
 	if len(args) < 2 {
 		cli.ShowAppHelp(c) //nolint:errcheck
 		return nil, fmt.Errorf("not enough arguments")
@@ -90,5 +90,5 @@ func Init(c *cli.Context, reg *harness.MetricRegistry) (harness.Collector, error
 		scrapers[i] = scraper
 	}
 
-	return NewCollector(endpoint, scrapers), nil
+	return NewCollector(endpoint, insecure, scrapers), nil
 }

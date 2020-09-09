@@ -14,6 +14,7 @@
 package jsonexporter
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 
 type Collector struct {
 	Endpoint string
+	Insecure bool
 	scrapers []JsonScraper
 }
 
@@ -58,15 +60,26 @@ func compilePaths(paths map[string]string) (map[string]*jsonpath.Path, error) {
 	return compiledPaths, nil
 }
 
-func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
+func NewCollector(endpoint string, insecure bool, scrapers []JsonScraper) *Collector {
 	return &Collector{
 		Endpoint: endpoint,
+		Insecure: insecure,
 		scrapers: scrapers,
 	}
 }
 
 func (col *Collector) fetchJson() ([]byte, error) {
-	resp, err := http.Get(col.Endpoint)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: col.Insecure},
+	}
+	client := &http.Client{
+		Transport: tr,
+	}
+	req, err := http.NewRequest("GET", col.Endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request header for endpoints;endpoint<%s>,err<%s>", col.Endpoint, err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
 	}
