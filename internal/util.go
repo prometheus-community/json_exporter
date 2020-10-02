@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -66,7 +67,7 @@ func SanitizeValue(v *jsonpath.Result) (float64, error) {
 func parseValue(bytes []byte) (float64, error) {
 	value, err := strconv.ParseFloat(string(bytes), 64)
 	if err != nil {
-		return -1.0, fmt.Errorf("failed to parse value as float;value:<%s>", bytes)
+		return -1.0, fmt.Errorf("failed to parse value as float; value: %q; err: %w", bytes, err)
 	}
 	return value, nil
 }
@@ -156,9 +157,13 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	defer func() {
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}()
+
+	if resp.StatusCode/100 != 2 {
 		return nil, errors.New(resp.Status)
 	}
 

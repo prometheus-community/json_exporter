@@ -34,7 +34,7 @@ import (
 var (
 	configFile    = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":7979").String()
-	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default().Bool()
+	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
 )
 
 func Run() {
@@ -58,7 +58,7 @@ func Run() {
 	}
 	configJson, err := json.Marshal(config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to marshal config to JOSN", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to marshal config to JSON", "err", err) //nolint:errcheck
 	}
 	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJson)) //nolint:errcheck
 
@@ -71,7 +71,7 @@ func Run() {
 		probeHandler(w, req, logger, config)
 	})
 	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
-		level.Error(logger).Log("msg", "failed to start the server", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to start the server", "err", err) //nolint:errcheck
 	}
 }
 

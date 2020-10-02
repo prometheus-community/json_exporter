@@ -59,7 +59,6 @@ func LoadConfig(configPath string) (Config, error) {
 	for i := 0; i < len(config.Metrics); i++ {
 		if config.Metrics[i].Type == "" {
 			config.Metrics[i].Type = ValueScrape
-			//config.Metrics[i].Type = "DefaultScrapeType"
 		}
 		if config.Metrics[i].Help == "" {
 			config.Metrics[i].Help = config.Metrics[i].Name
