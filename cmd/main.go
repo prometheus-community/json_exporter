@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
-	"github.com/prometheus-community/json_exporter/internal"
+	"github.com/prometheus-community/json_exporter/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/promlog"
@@ -83,12 +83,12 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	registry := prometheus.NewPedanticRegistry()
 
-	metrics, err := internal.CreateMetricsList(config)
+	metrics, err := exporter.CreateMetricsList(config)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
 	}
 
-	jsonMetricCollector := internal.JsonMetricCollector{JsonMetrics: metrics}
+	jsonMetricCollector := exporter.JsonMetricCollector{JsonMetrics: metrics}
 	jsonMetricCollector.Logger = logger
 
 	target := r.URL.Query().Get("target")
@@ -97,7 +97,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	data, err := internal.FetchJson(ctx, logger, target, config)
+	data, err := exporter.FetchJson(ctx, logger, target, config)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
