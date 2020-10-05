@@ -1,39 +1,30 @@
-global:
-  scrape_interval: 15s
-  scrape_timeout: 10s
-  evaluation_interval: 15s
-alerting:
-  alertmanagers:
-  - static_configs:
-    - targets: []
-    scheme: http
-    timeout: 10s
-    api_version: v1
-rule_files:
-- /etc/prometheus/alerts.yml
 scrape_configs:
+
+  ## gather metrics of prometheus itself
 - job_name: prometheus
-  honor_timestamps: true
-  scrape_interval: 15s
-  scrape_timeout: 10s
-  metrics_path: /metrics
-  scheme: http
   static_configs:
-  - targets:
-    - localhost:9090
-    - localhost:7979
+    - targets:
+      - localhost:9090
+
+  ## gather the metrics of json_exporter application itself
 - job_name: json_exporter
-  honor_timestamps: true
-  scrape_interval: 5s
-  metrics_path: /probe
-  scheme: http
   static_configs:
-  - targets:
-    - localhost:7979
-  params:
-    target: ["http://localhost:8000/examples/data.json"]
+    - targets:
+      - localhost:7979 ## Location of the json exporter's real <hostname>:<port>
+
+  ## gather the metrics from third party json sources, via the json exporter
+- job_name: json
+  metrics_path: /probe
+  static_configs:
+    - targets:
+      - http://host-1.foobar.com/dummy/data.json
+      - http://host-2:8000/other-examples/data.json
+      - http://localhost:8000/examples/data.json ## Used from the example steps in Readme
   relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
     - source_labels: [__param_target]
-      target_label: endpoint
-      action: replace
+      target_label: instance
+    - target_label: __address__
+      replacement: localhost:7979 ## Location of the json exporter's real <hostname>:<port>
 
