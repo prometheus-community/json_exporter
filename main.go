@@ -11,8 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package harness
+package main
 
-type Collector interface {
-	Collect(*MetricRegistry)
+import (
+	"github.com/prometheus-community/json_exporter/cmd"
+)
+
+func main() {
+	cmd.Run()
 }

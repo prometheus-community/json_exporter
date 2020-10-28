@@ -34,18 +34,24 @@ $ cat example/data.json
             "count": 3,
             "some_boolean": false,
             "state": "ACTIVE"
-        },
-    ]
+        }
+    ],
+    "location": "mars"
 }
 
-$ cat example/config.yml
+$ cat examples/config.yml
+---
+metrics:
 - name: example_global_value
   path: $.counter
+  help: Example of a top-level global value scrape in the json
   labels:
     environment: beta # static label
+    location: $.location          # dynamic label
 
 - name: example_value
   type: object
+  help: Example of sub-level value scrapes from a json
   path: $.values[*]?(@.state == "ACTIVE")
   labels:
     environment: beta # static label
@@ -55,35 +61,35 @@ $ cat example/config.yml
     count: $.count # dynamic value
     boolean: $.some_boolean
 
+headers:
+  X-Dummy: my-test-header
+
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
 
-$ ./json_exporter http://localhost:8000/example/data.json example/config.yml &
-INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_global_value>
-INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_boolean>
-INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_active>
-INFO[2016-02-08T22:44:38+09:00] metric registered;name:<example_value_count>
-127.0.0.1 - - [08/Feb/2016 22:44:38] "GET /example/data.json HTTP/1.1" 200 -
+$ ./json_exporter --config.file examples/config.yml &
 
-
-$ curl http://localhost:7979/metrics | grep ^example
-example_global_value{environment="beta"} 1234
+$ curl "http://localhost:7979/probe?target=http://localhost:8000/examples/data.json" | grep ^example
+example_global_value{environment="beta",location="mars"} 1234
 example_value_active{environment="beta",id="id-A"} 1
 example_value_active{environment="beta",id="id-C"} 1
 example_value_boolean{environment="beta",id="id-A"} 1
 example_value_boolean{environment="beta",id="id-C"} 0
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
+
+# To test through prometheus:
+$ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
 ```
+Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
 # Docker
 
 ```console
 docker run \
-  -v config.yml:/config.yml
+  -v $PWD/examples/config.yml:/config.yml
   quay.io/prometheuscommunity/json-exporter \
-    http://example.com/target.json \
-    /config.yml
+    --config.file /config.yml
 ```
 
 # See Also

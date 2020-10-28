@@ -16,8 +16,15 @@
         {
             "id": "id-C",
             "count": 3,
-            "some_boolean": false,
+            "some_boolean": true,
             "state": "ACTIVE"
         },
-    ]
+        {
+            "id": "id-C",
+            "count": 4,
+            "some_boolean": false,
+            "state": "ACTIVE"
+        }
+    ],
+    "location": "mars"
 }
