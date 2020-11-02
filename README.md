@@ -68,7 +68,7 @@ example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
 ```
 
-# global options as arguments
+# Flags
 
 * `port`: port exposing the metrics. Default: 7979
 * `interval`: scraping interval of the json api request. Default: 60 seconds
