@@ -77,7 +77,7 @@ example_value_count{environment="beta",id="id-C"} 3
 The following example sets the json api scraping to 30 seconds.
 
 ```sh
-$ ./json_exporter --interval=30  http://localhost:8000/example/data.json example/config.yml &
+$ ./json_exporter --interval=30  http://localhost:8000/example/data.json example/config.yml
 ```
 
 # Docker
