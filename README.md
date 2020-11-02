@@ -70,9 +70,9 @@ example_value_count{environment="beta",id="id-C"} 3
 
 # Flags
 
-* `port`: port exposing the metrics. Default: 7979
-* `interval`: scraping interval of the json api request. Default: 60 seconds
-* `log-level`: logging level. Default: info
+* `--port`: port exposing the metrics. Default: 7979
+* `--interval`: scraping interval of the json api request. Default: 60 seconds
+* `--log-level`: logging level. Default: info
 
 The following example sets the json api scraping to 30 seconds.
 
