@@ -159,7 +159,9 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	}
 
 	defer func() {
-		io.Copy(ioutil.Discard, resp.Body)
+		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
+			level.Error(logger).Log("msg", "Failed to discard body", "err", err) //nolint:errcheck
+		}
 		resp.Body.Close()
 	}()
 
