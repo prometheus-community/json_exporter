@@ -40,6 +40,7 @@ const (
 // Config contains metrics and headers defining a configuration
 type Config struct {
 	Headers          map[string]string        `yaml:"headers,omitempty"`
+	Target_base      string                   `yaml:"target_base,omitempty"`
 	Metrics          []Metric                 `yaml:"metrics"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
 }

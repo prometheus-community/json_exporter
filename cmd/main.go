@@ -17,7 +17,9 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -92,9 +94,28 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	jsonMetricCollector.Logger = logger
 
 	target := r.URL.Query().Get("target")
-	if target == "" {
-		http.Error(w, "Target parameter is missing", http.StatusBadRequest)
-		return
+
+	target_base := config.Target_base
+	if target_base != "" {
+		if target != "" {
+			level.Warn(logger).Log("msg", "Target Config specified. Ignoring Target URI parameter !") //nolint:errcheck
+		}
+		params_add := r.URL.Query().Get("params")
+		params_add, err = url.QueryUnescape(params_add)
+		if err != nil {
+			level.Error(logger).Log("msg", "Escaping error", "err", err) //nolint:errcheck
+		}
+		delim := "?"
+		if strings.Contains(target_base, "?") {
+			delim = "&"
+		}
+		target = target_base + delim + params_add
+		level.Debug(logger).Log("msg", "Target Config specified. Target (with params): ", target) //nolint:errcheck
+	} else {
+		if target == "" {
+			http.Error(w, "Target parameter is missing", http.StatusBadRequest)
+			return
+		}
 	}
 
 	data, err := exporter.FetchJson(ctx, logger, target, config)

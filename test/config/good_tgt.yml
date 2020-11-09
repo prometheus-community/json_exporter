@@ -19,18 +19,4 @@ metrics:
     count: $.count # dynamic value
     boolean: $.some_boolean
 
-headers:
-  X-Dummy: my-test-header
-
-# optional, overrides "target=" url parm, uses "params=" url param, note: to specify a '&' in parms url encode it: '%26'
-target_base: "http://api.local/getRequest?format=JSON"
-
-# For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
-#
-# http_client_config:
-#   tls_config:
-#     insecure_skip_verify: true
-#   basic_auth:
-#     username: myuser
-#     #password: veryverysecret
-#     password_file: /tmp/mysecret.txt
+target_base: "http://localhost"

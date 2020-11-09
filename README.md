@@ -78,6 +78,7 @@ example_value_boolean{environment="beta",id="id-C"} 0
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
 
+
 # To test through prometheus:
 $ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
 ```
@@ -90,6 +91,22 @@ docker run \
   -v $PWD/examples/config.yml:/config.yml
   quay.io/prometheuscommunity/json-exporter \
     --config.file /config.yml
+```
+
+### Target_base config
+When specifying 'target_base' in config.yml 
+```
+target_base: http://localhost:8000/examples/data.json
+metrics:
+...
+```
+you can rueqest samples with
+```
+$ curl "http://localhost:7979/probe" 
+```
+or specify url suffix with 'params=' url parma (note that '&' needs url encoding: '%26')
+```
+curl "http://localhost:7979/probe?prams=id=111%26format=JSON"
 ```
 
 # See Also

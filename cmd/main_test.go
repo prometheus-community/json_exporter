@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -216,5 +217,49 @@ func TestHTTPHeaders(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Setting custom headers failed unexpectedly. Got: %s", body)
+	}
+}
+
+func TestTargetBaseConfig(t *testing.T) {
+	test := struct {
+		ConfigFile    string
+		ServeFile     string
+		ResponseFile  string
+		ShouldSucceed bool
+	}{"../test/config/good_tgt.yml", "/serve/good.json", "../test/response/good.txt", true}
+
+	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
+	defer target.Close()
+
+	c, err := config.LoadConfig(test.ConfigFile)
+	if err != nil {
+		t.Fatalf("Failed to load config file %s", test.ConfigFile)
+	}
+	if !strings.Contains(c.Target_base, "http://") {
+		t.Fatalf("Target base config is not valid (test file wrong?)\nTarget_base: %s", c.Target_base)
+	}
+
+	for i := 0; i < 1; i++ {
+		// Since valid, overwrite with the correct target
+		var param_arg string
+		if i == 0 {
+			c.Target_base = target.URL + test.ServeFile
+			param_arg = ""
+		} else {
+			c.Target_base = target.URL
+			param_arg = "?params=" + test.ServeFile
+		}
+		req := httptest.NewRequest("GET", "http://example.com/foo"+param_arg, nil)
+		recorder := httptest.NewRecorder()
+		probeHandler(recorder, req, log.NewNopLogger(), c)
+
+		resp := recorder.Result()
+		body, _ := ioutil.ReadAll(resp.Body)
+
+		expected, _ := ioutil.ReadFile(test.ResponseFile)
+
+		if test.ShouldSucceed && string(body) != string(expected) {
+			t.Fatalf("Correct response validation (target base config) test %d fails unexpectedly.\nGOT:\n%s\nEXPECTED:\n%s", i, body, expected)
+		}
 	}
 }
