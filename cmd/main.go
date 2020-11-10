@@ -101,6 +101,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 			level.Warn(logger).Log("msg", "Target Config specified. Ignoring Target URI parameter !") //nolint:errcheck
 		}
 		params_add := r.URL.Query().Get("params")
+		level.Debug(logger).Log("msg", "Target_base", target_base, "params_add_unescaped:", params_add) //nolint:errcheck
 		params_add, err = url.QueryUnescape(params_add)
 		if err != nil {
 			level.Error(logger).Log("msg", "Escaping error", "err", err) //nolint:errcheck
@@ -110,7 +111,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 			delim = "&"
 		}
 		target = target_base + delim + params_add
-		level.Debug(logger).Log("msg", "Target Config specified. Target (with params): ", target) //nolint:errcheck
+		level.Debug(logger).Log("msg", "Target Config specified. Target (with params):", target) //nolint:errcheck
 	} else {
 		if target == "" {
 			http.Error(w, "Target parameter is missing", http.StatusBadRequest)
