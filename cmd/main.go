@@ -106,7 +106,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	jsonMetricCollector.Data = data
 
 	registry.MustRegister(jsonMetricCollector)
-	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
 	h.ServeHTTP(w, r)
 
 }
