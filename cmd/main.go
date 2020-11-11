@@ -16,6 +16,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	nativelog "log"
 	"net/http"
 	"os"
 
@@ -106,7 +107,11 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	jsonMetricCollector.Data = data
 
 	registry.MustRegister(jsonMetricCollector)
-	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
+	opts := promhttp.HandlerOpts{
+		ErrorLog:      nativelog.New(os.Stderr, "Error: ", nativelog.LstdFlags),
+		ErrorHandling: promhttp.ContinueOnError
+	}
+	h := promhttp.HandlerFor(registry, opts)
 	h.ServeHTTP(w, r)
 
 }
