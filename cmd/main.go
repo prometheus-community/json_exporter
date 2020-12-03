@@ -16,6 +16,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	logs "log"
 	"net/http"
 	"os"
 
@@ -35,6 +36,7 @@ var (
 	configFile    = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":7979").String()
 	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
+	continueOnError = kingpin.Flag("continueOnError", "If true implement the continue-on-error handling.").Default("false").Bool()
 )
 
 func Run() {
@@ -106,7 +108,13 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	jsonMetricCollector.Data = data
 
 	registry.MustRegister(jsonMetricCollector)
-	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+	opts := promhttp.HandlerOpts{
+		ErrorLog: logs.New(os.Stderr, "Error: ", logs.LstdFlags),
+    	}
+    	if *continueOnError {
+        	opts.ErrorHandling = promhttp.ContinueOnError
+    	}
+	h := promhttp.HandlerFor(registry, opts)
 	h.ServeHTTP(w, r)
 
 }
