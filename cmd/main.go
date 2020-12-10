@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/https"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -35,6 +36,7 @@ var (
 	configFile    = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
 	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":7979").String()
 	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
+	tlsConfigFile = kingpin.Flag("web.config", "[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.").Default("").String()
 )
 
 func Run() {
@@ -70,8 +72,11 @@ func Run() {
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req, logger, config)
 	})
-	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+
+	server := &http.Server{Addr: *listenAddress}
+	if err := https.Listen(server, *tlsConfigFile, logger); err != nil {
 		level.Error(logger).Log("msg", "Failed to start the server", "err", err) //nolint:errcheck
+		os.Exit(1)
 	}
 }
 

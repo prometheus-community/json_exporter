@@ -83,6 +83,31 @@ $ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/promethe
 ```
 Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
+# Exposing metrics through HTTPS
+
+web-config.yml
+```
+# Minimal TLS configuration example. Additionally, a certificate and a key file
+# are needed.
+tls_server_config:
+  cert_file: server.crt
+  key_file: server.key
+```
+Running
+```
+$ ./json_exporter --config.file examples/config.yml --web.config=web-config.yml &
+
+$ curl -k "https://localhost:7979/probe?target=http://localhost:8000/examples/data.json" | grep ^example
+example_global_value{environment="beta",location="mars"} 1234
+example_value_active{environment="beta",id="id-A"} 1
+example_value_active{environment="beta",id="id-C"} 1
+example_value_boolean{environment="beta",id="id-A"} 1
+example_value_boolean{environment="beta",id="id-C"} 0
+example_value_count{environment="beta",id="id-A"} 1
+example_value_count{environment="beta",id="id-C"} 3
+```
+For futher information about TLS configuration, please visit: [exporter-toolkit/https](https://github.com/prometheus/exporter-toolkit/blob/v0.1.0/https/README.md)
+
 # Docker
 
 ```console
