@@ -21,9 +21,12 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
@@ -110,21 +113,43 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	return metrics, nil
 }
 
-func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
-	httpClientConfig := config.HTTPClientConfig
+func FetchJson(ctx context.Context, logger log.Logger, endpoint string, c config.Config, tplValues url.Values) ([]byte, error) {
+	var req *http.Request
+	httpClientConfig := c.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
 		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
 		return nil, err
 	}
-	req, err := http.NewRequest("GET", endpoint, nil)
+
+	if c.Body.Content == "" {
+		req, err = http.NewRequest("GET", endpoint, nil)
+	} else {
+		br := strings.NewReader(c.Body.Content)
+		if c.Body.Templatize {
+			tpl, err := template.New("base").Funcs(sprig.GenericFuncMap()).Parse(c.Body.Content)
+			if err != nil {
+
+				level.Error(logger).Log("msg", "Failed to create a new template from body content", "err", err, "content", c.Body.Content) //nolint:errcheck
+			}
+			var b strings.Builder
+			if err := tpl.Execute(&b, tplValues); err != nil {
+				level.Error(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", c.Body.Content) //nolint:errcheck
+
+				// `tplValues` can contain sensitive values, so log it only when in debug mode
+				level.Debug(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", c.Body.Content, "values", tplValues) //nolint:errcheck
+			}
+			br = strings.NewReader(b.String())
+		}
+		req, err = http.NewRequest("POST", endpoint, br)
+	}
 	req = req.WithContext(ctx)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to create request", "err", err) //nolint:errcheck
 		return nil, err
 	}
 
-	for key, value := range config.Headers {
+	for key, value := range c.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {

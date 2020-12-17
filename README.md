@@ -91,6 +91,38 @@ TLS configuration supported by this exporter can be found at [exporter-toolkit/w
 make build
 ```
 
+## Sending body content for HTTP `POST`
+
+If `body` paramater is set in config, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
+```yaml
+body:
+  content: |
+    My static information: {"time_diff": "1m25s", "anotherVar": "some value"}
+```
+
+The body content can also be a [Go Template](https://golang.org/pkg/text/template). All the functions from the [Sprig library](https://masterminds.github.io/sprig/) can be used in the template.
+All the query parameters sent by prometheus in the scrape query to the exporter, are available as values while rendering the template.
+
+Example using template functions:
+```yaml
+body:
+  content: |
+    {"time_diff": "{{ duration `95` }}","anotherVar": "{{ randInt 12 30 }}"}
+  templatize: true
+```
+
+Example using template functions with values from the query parameters:
+```yaml
+body:
+  content: |
+    {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
+  templatize: true
+```
+Then `curl "http://exporter:7979/probe?target=http://scrape_target:8080/test/data.json&myVal=something"`, would result in sending the following body as the HTTP POST payload to `http://scrape_target:8080/test/data.json`:
+```
+{"time_diff": "1m35s","anotherVar": "something"}.
+```
+
 ## Docker
 
 ```console
