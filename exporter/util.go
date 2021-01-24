@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/kawamuray/jsonpath"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
@@ -36,40 +35,30 @@ func MakeMetricName(parts ...string) string {
 	return strings.Join(parts, "_")
 }
 
-func SanitizeValue(v *jsonpath.Result) (float64, error) {
+func SanitizeValue(s string) (float64, error) {
 	var value float64
-	var boolValue bool
-	var err error
-	switch v.Type {
-	case jsonpath.JsonNumber:
-		value, err = parseValue(v.Value)
-	case jsonpath.JsonString:
-		// If it is a string, lets pull off the quotes and attempt to parse it as a number
-		value, err = parseValue(v.Value[1 : len(v.Value)-1])
-	case jsonpath.JsonNull:
-		value = math.NaN()
-	case jsonpath.JsonBool:
-		if boolValue, err = strconv.ParseBool(string(v.Value)); boolValue {
-			value = 1.0
-		} else {
-			value = 0.0
-		}
-	default:
-		value, err = parseValue(v.Value)
-	}
-	if err != nil {
-		// Should never happen.
-		return -1.0, err
-	}
-	return value, err
-}
+	var resultErr string
 
-func parseValue(bytes []byte) (float64, error) {
-	value, err := strconv.ParseFloat(string(bytes), 64)
-	if err != nil {
-		return -1.0, fmt.Errorf("failed to parse value as float; value: %q; err: %w", bytes, err)
+	if value, err := strconv.ParseFloat(s, 64); err == nil {
+		return value, nil
+	} else {
+		resultErr = fmt.Sprintf("%s", err)
 	}
-	return value, nil
+
+	if boolValue, err := strconv.ParseBool(s); err == nil {
+		if boolValue {
+			return 1.0, nil
+		} else {
+			return 0.0, nil
+		}
+	} else {
+		resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
+	}
+
+	if s == "<nil>" {
+		return math.NaN(), nil
+	}
+	return value, fmt.Errorf(resultErr)
 }
 
 func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
@@ -77,23 +66,17 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	for _, metric := range c.Metrics {
 		switch metric.Type {
 		case config.ValueScrape:
-			constLabels := make(map[string]string)
 			var variableLabels, variableLabelsValues []string
 			for k, v := range metric.Labels {
-				if len(v) < 1 || v[0] != '$' {
-					// Static value
-					constLabels[k] = v
-				} else {
-					variableLabels = append(variableLabels, k)
-					variableLabelsValues = append(variableLabelsValues, v)
-				}
+				variableLabels = append(variableLabels, k)
+				variableLabelsValues = append(variableLabelsValues, v)
 			}
 			jsonMetric := JsonMetric{
 				Desc: prometheus.NewDesc(
 					metric.Name,
 					metric.Help,
 					variableLabels,
-					constLabels,
+					nil,
 				),
 				KeyJsonPath:     metric.Path,
 				LabelsJsonPaths: variableLabelsValues,
@@ -102,23 +85,17 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 		case config.ObjectScrape:
 			for subName, valuePath := range metric.Values {
 				name := MakeMetricName(metric.Name, subName)
-				constLabels := make(map[string]string)
 				var variableLabels, variableLabelsValues []string
 				for k, v := range metric.Labels {
-					if len(v) < 1 || v[0] != '$' {
-						// Static value
-						constLabels[k] = v
-					} else {
-						variableLabels = append(variableLabels, k)
-						variableLabelsValues = append(variableLabelsValues, v)
-					}
+					variableLabels = append(variableLabels, k)
+					variableLabelsValues = append(variableLabelsValues, v)
 				}
 				jsonMetric := JsonMetric{
 					Desc: prometheus.NewDesc(
 						name,
 						metric.Help,
 						variableLabels,
-						constLabels,
+						nil,
 					),
 					KeyJsonPath:     metric.Path,
 					ValueJsonPath:   valuePath,

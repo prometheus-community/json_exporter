@@ -1,6 +1,6 @@
 # HELP example_global_value Example of a top-level global value scrape in the json
 # TYPE example_global_value untyped
-example_global_value{environment="beta",location="mars"} 1234
+example_global_value{environment="beta",location="planet-mars"} 1234
 # HELP example_value_active Example of sub-level value scrapes from a json
 # TYPE example_value_active untyped
 example_value_active{environment="beta",id="id-A"} 1
