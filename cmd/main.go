@@ -28,7 +28,7 @@ import (
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
-	"github.com/prometheus/exporter-toolkit/https"
+	"github.com/prometheus/exporter-toolkit/web"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -74,7 +74,7 @@ func Run() {
 	})
 
 	server := &http.Server{Addr: *listenAddress}
-	if err := https.Listen(server, *tlsConfigFile, logger); err != nil {
+	if err := web.ListenAndServe(server, *tlsConfigFile, logger); err != nil {
 		level.Error(logger).Log("msg", "Failed to start the server", "err", err) //nolint:errcheck
 		os.Exit(1)
 	}
