@@ -1,4 +1,4 @@
-## 0.3.0
+## 0.3.0 / 2021-02-12
 
 :warning: Backward incompatible configuration with previous versions.
 * [CHANGE] Migrate JSONPath library [#74](https://github.com/prometheus-community/json_exporter/pull/74)
