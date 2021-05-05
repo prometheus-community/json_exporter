@@ -3,6 +3,7 @@ module github.com/prometheus-community/json_exporter
 go 1.14
 
 require (
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/go-kit/kit v0.10.0
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/common v0.15.0

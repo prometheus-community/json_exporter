@@ -16,7 +16,9 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,6 +36,8 @@ type JsonMetric struct {
 	KeyJsonPath     string
 	ValueJsonPath   string
 	LabelsJsonPaths []string
+	TimestampPath   string
+	Timezone        string
 }
 
 func (mc JsonMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -44,6 +48,15 @@ func (mc JsonMetricCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JsonMetrics {
+		if m.TimestampPath != "" && m.Timezone != "" { // manage timezone
+			loc, err := time.LoadLocation(m.Timezone)
+			if err != nil {
+				level.Error(mc.Logger).Log("msg", "Failed to extract timezone for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+				continue
+			}
+			time.Local = loc
+		}
+
 		if m.ValueJsonPath == "" { // ScrapeType is 'value'
 			value, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath, false)
 			if err != nil {
@@ -53,12 +66,27 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 
 			if floatValue, err := SanitizeValue(value); err == nil {
 
-				ch <- prometheus.MustNewConstMetric(
+				metric := prometheus.MustNewConstMetric(
 					m.Desc,
 					prometheus.UntypedValue,
 					floatValue,
 					extractLabels(mc.Logger, mc.Data, m.LabelsJsonPaths)...,
 				)
+				if m.TimestampPath == "" { // manage timestamp
+					ch <- metric
+				} else {
+					ts, err := extractValue(mc.Logger, mc.Data, m.TimestampPath, false)
+					if err != nil {
+						level.Error(mc.Logger).Log("msg", "Failed to extract timestamp for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+						continue
+					}
+					timestamp, err := dateparse.ParseLocal(ts)
+					if err != nil {
+						level.Error(mc.Logger).Log("msg", "Failed to convert timestamp", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+						continue
+					}
+					ch <- prometheus.NewMetricWithTimestamp(timestamp, metric)
+				}
 			} else {
 				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJsonPath, "value", value, "err", err, "metric", m.Desc) //nolint:errcheck
 				continue
@@ -85,12 +113,27 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					}
 
 					if floatValue, err := SanitizeValue(value); err == nil {
-						ch <- prometheus.MustNewConstMetric(
+						metric := prometheus.MustNewConstMetric(
 							m.Desc,
 							prometheus.UntypedValue,
 							floatValue,
 							extractLabels(mc.Logger, jdata, m.LabelsJsonPaths)...,
 						)
+						if m.TimestampPath == "" { // manage timestamp
+							ch <- metric
+						} else {
+							ts, err := extractValue(mc.Logger, jdata, m.TimestampPath, false)
+							if err != nil {
+								level.Error(mc.Logger).Log("msg", "Failed to extract timestamp for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+								continue
+							}
+							timestamp, err := dateparse.ParseLocal(ts)
+							if err != nil {
+								level.Error(mc.Logger).Log("msg", "Failed to convert timestamp", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+								continue
+							}
+							ch <- prometheus.NewMetricWithTimestamp(timestamp, metric)
+						}
 					} else {
 						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJsonPath, "value", value, "err", err, "metric", m.Desc) //nolint:errcheck
 						continue

@@ -22,12 +22,14 @@ import (
 
 // Metric contains values that define a metric
 type Metric struct {
-	Name   string
-	Path   string
-	Labels map[string]string
-	Type   MetricType
-	Help   string
-	Values map[string]string
+	Name      string
+	Path      string
+	Timestamp string
+	Timezone  string
+	Labels    map[string]string
+	Type      MetricType
+	Help      string
+	Values    map[string]string
 }
 
 type MetricType string
@@ -62,6 +64,9 @@ func LoadConfig(configPath string) (Config, error) {
 		}
 		if config.Metrics[i].Help == "" {
 			config.Metrics[i].Help = config.Metrics[i].Name
+		}
+		if config.Metrics[i].Timezone == "" {
+			config.Metrics[i].Timezone = "UTC"
 		}
 	}
 

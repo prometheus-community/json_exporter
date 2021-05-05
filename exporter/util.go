@@ -80,6 +80,8 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 				),
 				KeyJsonPath:     metric.Path,
 				LabelsJsonPaths: variableLabelsValues,
+				TimestampPath:   metric.Timestamp,
+				Timezone:        metric.Timezone,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
@@ -100,6 +102,8 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 					KeyJsonPath:     metric.Path,
 					ValueJsonPath:   valuePath,
 					LabelsJsonPaths: variableLabelsValues,
+					TimestampPath:   metric.Timestamp,
+					Timezone:        metric.Timezone,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
