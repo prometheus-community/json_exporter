@@ -15,9 +15,11 @@ package cmd
 
 import (
 	"encoding/base64"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -216,5 +218,152 @@ func TestHTTPHeaders(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Setting custom headers failed unexpectedly. Got: %s", body)
+	}
+}
+
+// Test is the body template is correctly rendered
+func TestBodyPostTemplate(t *testing.T) {
+	bodyTests := []struct {
+		Body          config.ConfigBody
+		ShouldSucceed bool
+		Result        string
+	}{
+		{
+			Body:          config.ConfigBody{Content: "something static like pi, 3.14"},
+			ShouldSucceed: true,
+		},
+		{
+			Body:          config.ConfigBody{Content: "arbitrary dynamic value pass: {{ randInt 12 30 }}", Templatize: false},
+			ShouldSucceed: true,
+		},
+		{
+			Body:          config.ConfigBody{Content: "arbitrary dynamic value fail: {{ randInt 12 30 }}", Templatize: true},
+			ShouldSucceed: false,
+		},
+		{
+			Body:          config.ConfigBody{Content: "templatized mutated value: {{ upper `hello` }} is now all caps", Templatize: true},
+			Result:        "templatized mutated value: HELLO is now all caps",
+			ShouldSucceed: true,
+		},
+		{
+			Body:          config.ConfigBody{Content: "value should be {{ lower `All Small` | trunc 3 }}", Templatize: true},
+			Result:        "value should be all",
+			ShouldSucceed: true,
+		},
+	}
+
+	for _, test := range bodyTests {
+		target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			expected := test.Body.Content
+			if test.Result != "" {
+				expected = test.Result
+			}
+			if got, _ := io.ReadAll(r.Body); string(got) != expected && test.ShouldSucceed {
+				t.Errorf("POST request body content mismatch, got: %s, expected: %s", got, expected)
+			}
+			w.WriteHeader(http.StatusOK)
+		}))
+
+		req := httptest.NewRequest("POST", "http://example.com/foo"+"?target="+target.URL, strings.NewReader(test.Body.Content))
+		recorder := httptest.NewRecorder()
+		c := config.Config{Body: test.Body}
+
+		probeHandler(recorder, req, log.NewNopLogger(), c)
+
+		resp := recorder.Result()
+		respBody, _ := ioutil.ReadAll(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("POST body content failed. Got: %s", respBody)
+		}
+		target.Close()
+	}
+}
+
+// Test is the query parameters are correctly replaced in the provided body template
+func TestBodyPostQuery(t *testing.T) {
+	bodyTests := []struct {
+		Body          config.ConfigBody
+		ShouldSucceed bool
+		Result        string
+		QueryParams   map[string]string
+	}{
+		{
+			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue | first }}", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "value of pi is 3.14",
+			QueryParams:   map[string]string{"piValue": "3.14"},
+		},
+		{
+			Body:          config.ConfigBody{Content: `{ "pi": "{{ .piValue | first }}" }`, Templatize: true},
+			ShouldSucceed: true,
+			Result:        `{ "pi": "3.14" }`,
+			QueryParams:   map[string]string{"piValue": "3.14"},
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of pi is {{ .anotherQuery | first }}", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "value of pi is dummy value",
+			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue }}", Templatize: true},
+			ShouldSucceed: false,
+			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue }}", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "value of pi is [3.14]",
+			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of {{ upper `pi` | repeat 3 }} is {{ .anotherQuery | first }}", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "value of PIPIPI is dummy value",
+			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue | first }}", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "value of pi is ",
+		},
+		{
+			Body:          config.ConfigBody{Content: "value of pi is 3.14", Templatize: true},
+			ShouldSucceed: true,
+		},
+	}
+
+	for _, test := range bodyTests {
+		target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			expected := test.Body.Content
+			if test.Result != "" {
+				expected = test.Result
+			}
+			if got, _ := io.ReadAll(r.Body); string(got) != expected && test.ShouldSucceed {
+				t.Errorf("POST request body content mismatch (with query params), got: %s, expected: %s", got, expected)
+			}
+			w.WriteHeader(http.StatusOK)
+		}))
+
+		req := httptest.NewRequest("POST", "http://example.com/foo"+"?target="+target.URL, strings.NewReader(test.Body.Content))
+		q := req.URL.Query()
+		for k, v := range test.QueryParams {
+			q.Add(k, v)
+		}
+		req.URL.RawQuery = q.Encode()
+
+		recorder := httptest.NewRecorder()
+		c := config.Config{Body: test.Body}
+
+		probeHandler(recorder, req, log.NewNopLogger(), c)
+
+		resp := recorder.Result()
+		respBody, _ := ioutil.ReadAll(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("POST body content failed. Got: %s", respBody)
+		}
+		target.Close()
 	}
 }
