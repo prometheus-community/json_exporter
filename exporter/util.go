@@ -114,7 +114,6 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 }
 
 func FetchJson(ctx context.Context, logger log.Logger, endpoint string, c config.Config, tplValues url.Values) ([]byte, error) {
-	var req *http.Request
 	httpClientConfig := c.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
@@ -122,26 +121,11 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, c config
 		return nil, err
 	}
 
+	var req *http.Request
 	if c.Body.Content == "" {
 		req, err = http.NewRequest("GET", endpoint, nil)
 	} else {
-		br := strings.NewReader(c.Body.Content)
-		if c.Body.Templatize {
-			tpl, err := template.New("base").Funcs(sprig.GenericFuncMap()).Parse(c.Body.Content)
-			if err != nil {
-
-				level.Error(logger).Log("msg", "Failed to create a new template from body content", "err", err, "content", c.Body.Content) //nolint:errcheck
-			}
-			var b strings.Builder
-			if err := tpl.Execute(&b, tplValues); err != nil {
-				level.Error(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", c.Body.Content) //nolint:errcheck
-
-				// `tplValues` can contain sensitive values, so log it only when in debug mode
-				level.Debug(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", c.Body.Content, "values", tplValues) //nolint:errcheck
-			}
-			br = strings.NewReader(b.String())
-		}
-		req, err = http.NewRequest("POST", endpoint, br)
+		req, err = http.NewRequest("POST", endpoint, renderBody(logger, c.Body, tplValues))
 	}
 	req = req.WithContext(ctx)
 	if err != nil {
@@ -177,4 +161,29 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, c config
 	}
 
 	return data, nil
+}
+
+// Use the configured template to render the body if enabled
+// Do not treat template errors as fatal, on such errors just log them
+// and continue with static body content
+func renderBody(logger log.Logger, body config.ConfigBody, tplValues url.Values) io.Reader {
+	br := strings.NewReader(body.Content)
+	if body.Templatize {
+		tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(body.Content)
+		if err != nil {
+			level.Error(logger).Log("msg", "Failed to create a new template from body content", "err", err, "content", body.Content) //nolint:errcheck
+			return br
+		}
+		tpl = tpl.Option("missingkey=zero")
+		var b strings.Builder
+		if err := tpl.Execute(&b, tplValues); err != nil {
+			level.Error(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content) //nolint:errcheck
+
+			// `tplValues` can contain sensitive values, so log it only when in debug mode
+			level.Debug(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content, "values", tplValues, "rendered_body", b.String()) //nolint:errcheck
+			return br
+		}
+		br = strings.NewReader(b.String())
+	}
+	return br
 }

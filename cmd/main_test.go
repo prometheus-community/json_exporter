@@ -289,9 +289,9 @@ func TestBodyPostQuery(t *testing.T) {
 		QueryParams   map[string]string
 	}{
 		{
-			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue | first }}", Templatize: true},
+			Body:          config.ConfigBody{Content: "pi has {{ .piValue | first }} value", Templatize: true},
 			ShouldSucceed: true,
-			Result:        "value of pi is 3.14",
+			Result:        "pi has 3.14 value",
 			QueryParams:   map[string]string{"piValue": "3.14"},
 		},
 		{
@@ -301,20 +301,20 @@ func TestBodyPostQuery(t *testing.T) {
 			QueryParams:   map[string]string{"piValue": "3.14"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of pi is {{ .anotherQuery | first }}", Templatize: true},
+			Body:          config.ConfigBody{Content: "pi has {{ .anotherQuery | first }} value", Templatize: true},
 			ShouldSucceed: true,
-			Result:        "value of pi is dummy value",
-			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
+			Result:        "pi has very high value",
+			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "very high"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue }}", Templatize: true},
+			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: false,
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue }}", Templatize: true},
+			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: true,
-			Result:        "value of pi is [3.14]",
+			Result:        "pi has [3.14] value",
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
@@ -324,9 +324,14 @@ func TestBodyPostQuery(t *testing.T) {
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of pi is {{ .piValue | first }}", Templatize: true},
+			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: true,
-			Result:        "value of pi is ",
+			Result:        "pi has [] value",
+		},
+		{
+			Body:          config.ConfigBody{Content: "pi has {{ .piValue | first }} value", Templatize: true},
+			ShouldSucceed: true,
+			Result:        "pi has <no value> value",
 		},
 		{
 			Body:          config.ConfigBody{Content: "value of pi is 3.14", Templatize: true},
