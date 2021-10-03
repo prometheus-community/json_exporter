@@ -22,6 +22,17 @@ metrics:
 headers:
   X-Dummy: my-test-header
 
+# If 'body' is set, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
+# body:
+#   content: |
+#     {"time_diff": "1m25s", "anotherVar": "some value"}
+
+# The body content can also be a Go Template (https://golang.org/pkg/text/template), with all the functions from the Sprig library (https://masterminds.github.io/sprig/) available. All the query parameters sent by prometheus in the scrape query to the exporter, are available in the template.
+# body:
+#   content: |
+#     {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
+#   templatize: true
+
 # For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
 #
 # http_client_config:

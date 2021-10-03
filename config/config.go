@@ -42,6 +42,12 @@ type Config struct {
 	Headers          map[string]string        `yaml:"headers,omitempty"`
 	Metrics          []Metric                 `yaml:"metrics"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
+	Body             ConfigBody               `yaml:"body,omitempty"`
+}
+
+type ConfigBody struct {
+	Content    string `yaml:"content"`
+	Templatize bool   `yaml:"templatize,omitempty"`
 }
 
 func LoadConfig(configPath string) (Config, error) {

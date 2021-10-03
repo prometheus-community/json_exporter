@@ -102,7 +102,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	data, err := exporter.FetchJson(ctx, logger, target, config)
+	data, err := exporter.FetchJson(ctx, logger, target, config, r.URL.Query())
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
