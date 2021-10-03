@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 	"github.com/prometheus-community/json_exporter/config"
 	pconfig "github.com/prometheus/common/config"
 )
