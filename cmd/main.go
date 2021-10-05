@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus-community/json_exporter/exporter"
 	"github.com/prometheus/client_golang/prometheus"
@@ -49,20 +49,20 @@ func Run() {
 	kingpin.Parse()
 	logger := promlog.New(promlogConfig)
 
-	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info()) //nolint:errcheck
-	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())    //nolint:errcheck
+	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
 
-	level.Info(logger).Log("msg", "Loading config file", "file", *configFile) //nolint:errcheck
+	level.Info(logger).Log("msg", "Loading config file", "file", *configFile)
 	config, err := config.LoadConfig(*configFile)
 	if err != nil {
-		level.Error(logger).Log("msg", "Error loading config", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Error loading config", "err", err)
 		os.Exit(1)
 	}
 	configJson, err := json.Marshal(config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to marshal config to JSON", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to marshal config to JSON", "err", err)
 	}
-	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJson)) //nolint:errcheck
+	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJson))
 
 	if *configCheck {
 		os.Exit(0)
@@ -75,7 +75,7 @@ func Run() {
 
 	server := &http.Server{Addr: *listenAddress}
 	if err := web.ListenAndServe(server, *tlsConfigFile, logger); err != nil {
-		level.Error(logger).Log("msg", "Failed to start the server", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to start the server", "err", err)
 		os.Exit(1)
 	}
 }
@@ -90,7 +90,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	metrics, err := exporter.CreateMetricsList(config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
 	}
 
 	jsonMetricCollector := exporter.JsonMetricCollector{JsonMetrics: metrics}
@@ -102,7 +102,8 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	data, err := exporter.FetchJson(ctx, logger, target, config, r.URL.Query())
+	fetcher := exporter.NewJsonFetcher(ctx, logger, config, r.URL.Query())
+	data, err := fetcher.FetchJson(target)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return

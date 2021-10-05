@@ -17,8 +17,8 @@ import (
 	"bytes"
 	"encoding/json"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -47,7 +47,7 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 		if m.ValueJsonPath == "" { // ScrapeType is 'value'
 			value, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath, false)
 			if err != nil {
-				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc)
 				continue
 			}
 
@@ -60,13 +60,13 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					extractLabels(mc.Logger, mc.Data, m.LabelsJsonPaths)...,
 				)
 			} else {
-				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJsonPath, "value", value, "err", err, "metric", m.Desc) //nolint:errcheck
+				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJsonPath, "value", value, "err", err, "metric", m.Desc)
 				continue
 			}
 		} else { // ScrapeType is 'object'
 			values, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath, true)
 			if err != nil {
-				level.Error(mc.Logger).Log("msg", "Failed to extract json objects for metric", "err", err, "metric", m.Desc) //nolint:errcheck
+				level.Error(mc.Logger).Log("msg", "Failed to extract json objects for metric", "err", err, "metric", m.Desc)
 				continue
 			}
 
@@ -75,12 +75,12 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				for _, data := range jsonData {
 					jdata, err := json.Marshal(data)
 					if err != nil {
-						level.Error(mc.Logger).Log("msg", "Failed to marshal data to json", "path", m.ValueJsonPath, "err", err, "metric", m.Desc, "data", data) //nolint:errcheck
+						level.Error(mc.Logger).Log("msg", "Failed to marshal data to json", "path", m.ValueJsonPath, "err", err, "metric", m.Desc, "data", data)
 						continue
 					}
 					value, err := extractValue(mc.Logger, jdata, m.ValueJsonPath, false)
 					if err != nil {
-						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJsonPath, "err", err, "metric", m.Desc) //nolint:errcheck
+						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJsonPath, "err", err, "metric", m.Desc)
 						continue
 					}
 
@@ -92,12 +92,12 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 							extractLabels(mc.Logger, jdata, m.LabelsJsonPaths)...,
 						)
 					} else {
-						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJsonPath, "value", value, "err", err, "metric", m.Desc) //nolint:errcheck
+						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJsonPath, "value", value, "err", err, "metric", m.Desc)
 						continue
 					}
 				}
 			} else {
-				level.Error(mc.Logger).Log("msg", "Failed to convert extracted objects to json", "err", err, "metric", m.Desc) //nolint:errcheck
+				level.Error(mc.Logger).Log("msg", "Failed to convert extracted objects to json", "err", err, "metric", m.Desc)
 				continue
 			}
 		}
@@ -115,17 +115,17 @@ func extractValue(logger log.Logger, data []byte, path string, enableJSONOutput 
 	}
 
 	if err := json.Unmarshal(data, &jsonData); err != nil {
-		level.Error(logger).Log("msg", "Failed to unmarshal data to json", "err", err, "data", data) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to unmarshal data to json", "err", err, "data", data)
 		return "", err
 	}
 
 	if err := j.Parse(path); err != nil {
-		level.Error(logger).Log("msg", "Failed to parse jsonpath", "err", err, "path", path, "data", data) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to parse jsonpath", "err", err, "path", path, "data", data)
 		return "", err
 	}
 
 	if err := j.Execute(buf, jsonData); err != nil {
-		level.Error(logger).Log("msg", "Failed to execute jsonpath", "err", err, "path", path, "data", data) //nolint:errcheck
+		level.Error(logger).Log("msg", "Failed to execute jsonpath", "err", err, "path", path, "data", data)
 		return "", err
 	}
 
@@ -144,7 +144,7 @@ func extractLabels(logger log.Logger, data []byte, paths []string) []string {
 		if result, err := extractValue(logger, data, path, false); err == nil {
 			labels[i] = result
 		} else {
-			level.Error(logger).Log("msg", "Failed to extract label value", "err", err, "path", path, "data", data) //nolint:errcheck
+			level.Error(logger).Log("msg", "Failed to extract label value", "err", err, "path", path, "data", data)
 		}
 	}
 	return labels
