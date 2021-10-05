@@ -8,7 +8,7 @@ executors:
   # This must match .promu.yml.
   golang:
     docker:
-    - image: circleci/golang:1.16
+    - image: circleci/golang:1.17
 
 jobs:
   test:

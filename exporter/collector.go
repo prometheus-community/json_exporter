@@ -23,31 +23,31 @@ import (
 	"k8s.io/client-go/util/jsonpath"
 )
 
-type JsonMetricCollector struct {
-	JsonMetrics []JsonMetric
+type JSONMetricCollector struct {
+	JSONMetrics []JSONMetric
 	Data        []byte
 	Logger      log.Logger
 }
 
-type JsonMetric struct {
+type JSONMetric struct {
 	Desc            *prometheus.Desc
-	KeyJsonPath     string
-	ValueJsonPath   string
-	LabelsJsonPaths []string
+	KeyJSONPath     string
+	ValueJSONPath   string
+	LabelsJSONPaths []string
 }
 
-func (mc JsonMetricCollector) Describe(ch chan<- *prometheus.Desc) {
-	for _, m := range mc.JsonMetrics {
+func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
+	for _, m := range mc.JSONMetrics {
 		ch <- m.Desc
 	}
 }
 
-func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
-	for _, m := range mc.JsonMetrics {
-		if m.ValueJsonPath == "" { // ScrapeType is 'value'
-			value, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath, false)
+func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
+	for _, m := range mc.JSONMetrics {
+		if m.ValueJSONPath == "" { // ScrapeType is 'value'
+			value, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false)
 			if err != nil {
-				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJsonPath, "err", err, "metric", m.Desc)
+				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 				continue
 			}
 
@@ -57,14 +57,14 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					m.Desc,
 					prometheus.UntypedValue,
 					floatValue,
-					extractLabels(mc.Logger, mc.Data, m.LabelsJsonPaths)...,
+					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
 				)
 			} else {
-				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJsonPath, "value", value, "err", err, "metric", m.Desc)
+				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
 				continue
 			}
 		} else { // ScrapeType is 'object'
-			values, err := extractValue(mc.Logger, mc.Data, m.KeyJsonPath, true)
+			values, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true)
 			if err != nil {
 				level.Error(mc.Logger).Log("msg", "Failed to extract json objects for metric", "err", err, "metric", m.Desc)
 				continue
@@ -75,12 +75,12 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				for _, data := range jsonData {
 					jdata, err := json.Marshal(data)
 					if err != nil {
-						level.Error(mc.Logger).Log("msg", "Failed to marshal data to json", "path", m.ValueJsonPath, "err", err, "metric", m.Desc, "data", data)
+						level.Error(mc.Logger).Log("msg", "Failed to marshal data to json", "path", m.ValueJSONPath, "err", err, "metric", m.Desc, "data", data)
 						continue
 					}
-					value, err := extractValue(mc.Logger, jdata, m.ValueJsonPath, false)
+					value, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false)
 					if err != nil {
-						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJsonPath, "err", err, "metric", m.Desc)
+						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
 					}
 
@@ -89,10 +89,10 @@ func (mc JsonMetricCollector) Collect(ch chan<- prometheus.Metric) {
 							m.Desc,
 							prometheus.UntypedValue,
 							floatValue,
-							extractLabels(mc.Logger, jdata, m.LabelsJsonPaths)...,
+							extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)...,
 						)
 					} else {
-						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJsonPath, "value", value, "err", err, "metric", m.Desc)
+						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJSONPath, "value", value, "err", err, "metric", m.Desc)
 						continue
 					}
 				}

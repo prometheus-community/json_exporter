@@ -224,29 +224,29 @@ func TestHTTPHeaders(t *testing.T) {
 // Test is the body template is correctly rendered
 func TestBodyPostTemplate(t *testing.T) {
 	bodyTests := []struct {
-		Body          config.ConfigBody
+		Body          config.Body
 		ShouldSucceed bool
 		Result        string
 	}{
 		{
-			Body:          config.ConfigBody{Content: "something static like pi, 3.14"},
+			Body:          config.Body{Content: "something static like pi, 3.14"},
 			ShouldSucceed: true,
 		},
 		{
-			Body:          config.ConfigBody{Content: "arbitrary dynamic value pass: {{ randInt 12 30 }}", Templatize: false},
+			Body:          config.Body{Content: "arbitrary dynamic value pass: {{ randInt 12 30 }}", Templatize: false},
 			ShouldSucceed: true,
 		},
 		{
-			Body:          config.ConfigBody{Content: "arbitrary dynamic value fail: {{ randInt 12 30 }}", Templatize: true},
+			Body:          config.Body{Content: "arbitrary dynamic value fail: {{ randInt 12 30 }}", Templatize: true},
 			ShouldSucceed: false,
 		},
 		{
-			Body:          config.ConfigBody{Content: "templatized mutated value: {{ upper `hello` }} is now all caps", Templatize: true},
+			Body:          config.Body{Content: "templatized mutated value: {{ upper `hello` }} is now all caps", Templatize: true},
 			Result:        "templatized mutated value: HELLO is now all caps",
 			ShouldSucceed: true,
 		},
 		{
-			Body:          config.ConfigBody{Content: "value should be {{ lower `All Small` | trunc 3 }}", Templatize: true},
+			Body:          config.Body{Content: "value should be {{ lower `All Small` | trunc 3 }}", Templatize: true},
 			Result:        "value should be all",
 			ShouldSucceed: true,
 		},
@@ -283,58 +283,58 @@ func TestBodyPostTemplate(t *testing.T) {
 // Test is the query parameters are correctly replaced in the provided body template
 func TestBodyPostQuery(t *testing.T) {
 	bodyTests := []struct {
-		Body          config.ConfigBody
+		Body          config.Body
 		ShouldSucceed bool
 		Result        string
 		QueryParams   map[string]string
 	}{
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .piValue | first }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .piValue | first }} value", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "pi has 3.14 value",
 			QueryParams:   map[string]string{"piValue": "3.14"},
 		},
 		{
-			Body:          config.ConfigBody{Content: `{ "pi": "{{ .piValue | first }}" }`, Templatize: true},
+			Body:          config.Body{Content: `{ "pi": "{{ .piValue | first }}" }`, Templatize: true},
 			ShouldSucceed: true,
 			Result:        `{ "pi": "3.14" }`,
 			QueryParams:   map[string]string{"piValue": "3.14"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .anotherQuery | first }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .anotherQuery | first }} value", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "pi has very high value",
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "very high"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: false,
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "pi has [3.14] value",
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of {{ upper `pi` | repeat 3 }} is {{ .anotherQuery | first }}", Templatize: true},
+			Body:          config.Body{Content: "value of {{ upper `pi` | repeat 3 }} is {{ .anotherQuery | first }}", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "value of PIPIPI is dummy value",
 			QueryParams:   map[string]string{"piValue": "3.14", "anotherQuery": "dummy value"},
 		},
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .piValue }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .piValue }} value", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "pi has [] value",
 		},
 		{
-			Body:          config.ConfigBody{Content: "pi has {{ .piValue | first }} value", Templatize: true},
+			Body:          config.Body{Content: "pi has {{ .piValue | first }} value", Templatize: true},
 			ShouldSucceed: true,
 			Result:        "pi has <no value> value",
 		},
 		{
-			Body:          config.ConfigBody{Content: "value of pi is 3.14", Templatize: true},
+			Body:          config.Body{Content: "value of pi is 3.14", Templatize: true},
 			ShouldSucceed: true,
 		},
 	}

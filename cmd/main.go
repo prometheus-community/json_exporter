@@ -58,11 +58,11 @@ func Run() {
 		level.Error(logger).Log("msg", "Error loading config", "err", err)
 		os.Exit(1)
 	}
-	configJson, err := json.Marshal(config)
+	configJSON, err := json.Marshal(config)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to marshal config to JSON", "err", err)
 	}
-	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJson))
+	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJSON))
 
 	if *configCheck {
 		os.Exit(0)
@@ -93,7 +93,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
 	}
 
-	jsonMetricCollector := exporter.JsonMetricCollector{JsonMetrics: metrics}
+	jsonMetricCollector := exporter.JSONMetricCollector{JSONMetrics: metrics}
 	jsonMetricCollector.Logger = logger
 
 	target := r.URL.Query().Get("target")
@@ -102,8 +102,8 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	fetcher := exporter.NewJsonFetcher(ctx, logger, config, r.URL.Query())
-	data, err := fetcher.FetchJson(target)
+	fetcher := exporter.NewJSONFetcher(ctx, logger, config, r.URL.Query())
+	data, err := fetcher.FetchJSON(target)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
 		return
