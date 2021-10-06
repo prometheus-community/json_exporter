@@ -39,24 +39,22 @@ func MakeMetricName(parts ...string) string {
 }
 
 func SanitizeValue(s string) (float64, error) {
+	var err error
 	var value float64
 	var resultErr string
 
-	if value, err := strconv.ParseFloat(s, 64); err == nil {
+	if value, err = strconv.ParseFloat(s, 64); err == nil {
 		return value, nil
-	} else {
-		resultErr = fmt.Sprintf("%s", err)
 	}
+	resultErr = fmt.Sprintf("%s", err)
 
 	if boolValue, err := strconv.ParseBool(s); err == nil {
 		if boolValue {
 			return 1.0, nil
-		} else {
-			return 0.0, nil
 		}
-	} else {
-		resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
+		return 0.0, nil
 	}
+	resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
 
 	if s == "<nil>" {
 		return math.NaN(), nil
@@ -64,8 +62,8 @@ func SanitizeValue(s string) (float64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
-func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
-	var metrics []JsonMetric
+func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
+	var metrics []JSONMetric
 	for _, metric := range c.Metrics {
 		switch metric.Type {
 		case config.ValueScrape:
@@ -74,15 +72,15 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 				variableLabels = append(variableLabels, k)
 				variableLabelsValues = append(variableLabelsValues, v)
 			}
-			jsonMetric := JsonMetric{
+			jsonMetric := JSONMetric{
 				Desc: prometheus.NewDesc(
 					metric.Name,
 					metric.Help,
 					variableLabels,
 					nil,
 				),
-				KeyJsonPath:     metric.Path,
-				LabelsJsonPaths: variableLabelsValues,
+				KeyJSONPath:     metric.Path,
+				LabelsJSONPaths: variableLabelsValues,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
@@ -93,16 +91,16 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 					variableLabels = append(variableLabels, k)
 					variableLabelsValues = append(variableLabelsValues, v)
 				}
-				jsonMetric := JsonMetric{
+				jsonMetric := JSONMetric{
 					Desc: prometheus.NewDesc(
 						name,
 						metric.Help,
 						variableLabels,
 						nil,
 					),
-					KeyJsonPath:     metric.Path,
-					ValueJsonPath:   valuePath,
-					LabelsJsonPaths: variableLabelsValues,
+					KeyJSONPath:     metric.Path,
+					ValueJSONPath:   valuePath,
+					LabelsJSONPaths: variableLabelsValues,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
@@ -113,7 +111,7 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	return metrics, nil
 }
 
-type jsonFetcher struct {
+type JSONFetcher struct {
 	config config.Config
 	ctx    context.Context
 	logger log.Logger
@@ -121,9 +119,9 @@ type jsonFetcher struct {
 	body   io.Reader
 }
 
-func NewJsonFetcher(ctx context.Context, logger log.Logger, c config.Config, tplValues url.Values) *jsonFetcher {
+func NewJSONFetcher(ctx context.Context, logger log.Logger, c config.Config, tplValues url.Values) *JSONFetcher {
 	method, body := renderBody(logger, c.Body, tplValues)
-	return &jsonFetcher{
+	return &JSONFetcher{
 		config: c,
 		ctx:    ctx,
 		logger: logger,
@@ -132,7 +130,7 @@ func NewJsonFetcher(ctx context.Context, logger log.Logger, c config.Config, tpl
 	}
 }
 
-func (f *jsonFetcher) FetchJson(endpoint string) ([]byte, error) {
+func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	httpClientConfig := f.config.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
@@ -181,7 +179,7 @@ func (f *jsonFetcher) FetchJson(endpoint string) ([]byte, error) {
 // Use the configured template to render the body if enabled
 // Do not treat template errors as fatal, on such errors just log them
 // and continue with static body content
-func renderBody(logger log.Logger, body config.ConfigBody, tplValues url.Values) (method string, br io.Reader) {
+func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (method string, br io.Reader) {
 	method = "POST"
 	if body.Content == "" {
 		return "GET", nil
