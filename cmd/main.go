@@ -111,7 +111,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	opts := promhttp.HandlerOpts{
 		ErrorLog: logs.New(os.Stderr, "Error: ", logs.LstdFlags),
 	}
-    	if *continueOnError {
+	if *continueOnError {
 		opts.ErrorHandling = promhttp.ContinueOnError
 	}
 	h := promhttp.HandlerFor(registry, opts)
