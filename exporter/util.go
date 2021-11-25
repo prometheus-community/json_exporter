@@ -21,12 +21,14 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"text/template"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	"github.com/kawamuray/jsonpath"
+	"github.com/Masterminds/sprig/v3"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
@@ -36,93 +38,69 @@ func MakeMetricName(parts ...string) string {
 	return strings.Join(parts, "_")
 }
 
-func SanitizeValue(v *jsonpath.Result) (float64, error) {
-	var value float64
-	var boolValue bool
+func SanitizeValue(s string) (float64, error) {
 	var err error
-	switch v.Type {
-	case jsonpath.JsonNumber:
-		value, err = parseValue(v.Value)
-	case jsonpath.JsonString:
-		// If it is a string, lets pull off the quotes and attempt to parse it as a number
-		value, err = parseValue(v.Value[1 : len(v.Value)-1])
-	case jsonpath.JsonNull:
-		value = math.NaN()
-	case jsonpath.JsonBool:
-		if boolValue, err = strconv.ParseBool(string(v.Value)); boolValue {
-			value = 1.0
-		} else {
-			value = 0.0
+	var value float64
+	var resultErr string
+
+	if value, err = strconv.ParseFloat(s, 64); err == nil {
+		return value, nil
+	}
+	resultErr = fmt.Sprintf("%s", err)
+
+	if boolValue, err := strconv.ParseBool(s); err == nil {
+		if boolValue {
+			return 1.0, nil
 		}
-	default:
-		value, err = parseValue(v.Value)
+		return 0.0, nil
 	}
-	if err != nil {
-		// Should never happen.
-		return -1.0, err
+	resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
+
+	if s == "<nil>" {
+		return math.NaN(), nil
 	}
-	return value, err
+	return value, fmt.Errorf(resultErr)
 }
 
-func parseValue(bytes []byte) (float64, error) {
-	value, err := strconv.ParseFloat(string(bytes), 64)
-	if err != nil {
-		return -1.0, fmt.Errorf("failed to parse value as float; value: %q; err: %w", bytes, err)
-	}
-	return value, nil
-}
-
-func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
-	var metrics []JsonMetric
+func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
+	var metrics []JSONMetric
 	for _, metric := range c.Metrics {
 		switch metric.Type {
 		case config.ValueScrape:
-			constLabels := make(map[string]string)
 			var variableLabels, variableLabelsValues []string
 			for k, v := range metric.Labels {
-				if len(v) < 1 || v[0] != '$' {
-					// Static value
-					constLabels[k] = v
-				} else {
-					variableLabels = append(variableLabels, k)
-					variableLabelsValues = append(variableLabelsValues, v)
-				}
+				variableLabels = append(variableLabels, k)
+				variableLabelsValues = append(variableLabelsValues, v)
 			}
-			jsonMetric := JsonMetric{
+			jsonMetric := JSONMetric{
 				Desc: prometheus.NewDesc(
 					metric.Name,
 					metric.Help,
 					variableLabels,
-					constLabels,
+					nil,
 				),
-				KeyJsonPath:     metric.Path,
-				LabelsJsonPaths: variableLabelsValues,
+				KeyJSONPath:     metric.Path,
+				LabelsJSONPaths: variableLabelsValues,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
 			for subName, valuePath := range metric.Values {
 				name := MakeMetricName(metric.Name, subName)
-				constLabels := make(map[string]string)
 				var variableLabels, variableLabelsValues []string
 				for k, v := range metric.Labels {
-					if len(v) < 1 || v[0] != '$' {
-						// Static value
-						constLabels[k] = v
-					} else {
-						variableLabels = append(variableLabels, k)
-						variableLabelsValues = append(variableLabelsValues, v)
-					}
+					variableLabels = append(variableLabels, k)
+					variableLabelsValues = append(variableLabelsValues, v)
 				}
-				jsonMetric := JsonMetric{
+				jsonMetric := JSONMetric{
 					Desc: prometheus.NewDesc(
 						name,
 						metric.Help,
 						variableLabels,
-						constLabels,
+						nil,
 					),
-					KeyJsonPath:     metric.Path,
-					ValueJsonPath:   valuePath,
-					LabelsJsonPaths: variableLabelsValues,
+					KeyJSONPath:     metric.Path,
+					ValueJSONPath:   valuePath,
+					LabelsJSONPaths: variableLabelsValues,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
@@ -133,21 +111,42 @@ func CreateMetricsList(c config.Config) ([]JsonMetric, error) {
 	return metrics, nil
 }
 
-func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config config.Config) ([]byte, error) {
-	httpClientConfig := config.HTTPClientConfig
-	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", true, false)
-	if err != nil {
-		level.Error(logger).Log("msg", "Error generating HTTP client", "err", err) //nolint:errcheck
-		return nil, err
+type JSONFetcher struct {
+	config config.Config
+	ctx    context.Context
+	logger log.Logger
+	method string
+	body   io.Reader
+}
+
+func NewJSONFetcher(ctx context.Context, logger log.Logger, c config.Config, tplValues url.Values) *JSONFetcher {
+	method, body := renderBody(logger, c.Body, tplValues)
+	return &JSONFetcher{
+		config: c,
+		ctx:    ctx,
+		logger: logger,
+		method: method,
+		body:   body,
 	}
-	req, err := http.NewRequest("GET", endpoint, nil)
-	req = req.WithContext(ctx)
+}
+
+func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
+	httpClientConfig := f.config.HTTPClientConfig
+	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create request", "err", err) //nolint:errcheck
+		level.Error(f.logger).Log("msg", "Error generating HTTP client", "err", err)
 		return nil, err
 	}
 
-	for key, value := range config.Headers {
+	var req *http.Request
+	req, err = http.NewRequest(f.method, endpoint, f.body)
+	req = req.WithContext(f.ctx)
+	if err != nil {
+		level.Error(f.logger).Log("msg", "Failed to create request", "err", err)
+		return nil, err
+	}
+
+	for key, value := range f.config.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {
@@ -160,7 +159,7 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 
 	defer func() {
 		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
-			level.Error(logger).Log("msg", "Failed to discard body", "err", err) //nolint:errcheck
+			level.Error(f.logger).Log("msg", "Failed to discard body", "err", err)
 		}
 		resp.Body.Close()
 	}()
@@ -175,4 +174,33 @@ func FetchJson(ctx context.Context, logger log.Logger, endpoint string, config c
 	}
 
 	return data, nil
+}
+
+// Use the configured template to render the body if enabled
+// Do not treat template errors as fatal, on such errors just log them
+// and continue with static body content
+func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (method string, br io.Reader) {
+	method = "POST"
+	if body.Content == "" {
+		return "GET", nil
+	}
+	br = strings.NewReader(body.Content)
+	if body.Templatize {
+		tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(body.Content)
+		if err != nil {
+			level.Error(logger).Log("msg", "Failed to create a new template from body content", "err", err, "content", body.Content)
+			return
+		}
+		tpl = tpl.Option("missingkey=zero")
+		var b strings.Builder
+		if err := tpl.Execute(&b, tplValues); err != nil {
+			level.Error(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content)
+
+			// `tplValues` can contain sensitive values, so log it only when in debug mode
+			level.Debug(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content, "values", tplValues, "rendered_body", b.String())
+			return
+		}
+		br = strings.NewReader(b.String())
+	}
+	return
 }
