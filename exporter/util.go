@@ -149,9 +149,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	for key, value := range f.config.Headers {
 		req.Header.Add(key, value)
 	}
-	if req.Header.Get("Accept") == "" {
-		req.Header.Add("Accept", "application/json")
-	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
