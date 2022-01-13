@@ -23,3 +23,5 @@ _testmain.go
 *.test
 *.prof
 
+/build
+/json_exporter
