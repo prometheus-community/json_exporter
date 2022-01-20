@@ -39,10 +39,11 @@ const (
 
 // Config contains metrics and headers defining a configuration
 type Config struct {
-	Headers          map[string]string        `yaml:"headers,omitempty"`
-	Metrics          []Metric                 `yaml:"metrics"`
-	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
-	Body             Body                     `yaml:"body,omitempty"`
+	Headers                 map[string]string        `yaml:"headers,omitempty"`
+	Metrics                 []Metric                 `yaml:"metrics"`
+	HTTPClientConfig        pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
+	Body                    Body                     `yaml:"body,omitempty"`
+	DisableHTTPAcceptHeader bool                     `yaml:"disable_http_accept_header,omitempty"`
 }
 
 type Body struct {

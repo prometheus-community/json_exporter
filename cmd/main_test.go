@@ -98,6 +98,27 @@ func TestDefaultAcceptHeader(t *testing.T) {
 	}
 }
 
+func TestDisableAcceptHeader(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		expected := 0
+		if got := r.Header.Get("Accept"); len(got) != expected {
+			t.Errorf("'Accept' header is present, got: %s (length %d), expected length: %d", got, len(got), expected)
+			w.WriteHeader(http.StatusNotAcceptable)
+		}
+	}))
+	defer target.Close()
+
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	recorder := httptest.NewRecorder()
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{DisableHTTPAcceptHeader: true})
+
+	resp := recorder.Result()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Disable 'Accept' header test fails unexpectedly, got %s", body)
+	}
+}
 func TestCorrectResponse(t *testing.T) {
 	tests := []struct {
 		ConfigFile    string

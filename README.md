@@ -122,6 +122,8 @@ Then `curl "http://exporter:7979/probe?target=http://scrape_target:8080/test/dat
 ```
 {"time_diff": "1m35s","anotherVar": "something"}.
 ```
+## Disable Http Accept Header
+For disabeling Http Accept header you need set `disable_http_accept_header: true` in configuration file. Default Http Accept Header **enable**.
 
 ## Docker
 

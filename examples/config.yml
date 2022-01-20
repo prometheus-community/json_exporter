@@ -42,3 +42,6 @@ headers:
 #     username: myuser
 #     #password: veryverysecret
 #     password_file: /tmp/mysecret.txt
+
+# For disable http accept header in request
+# disable_http_accept_header: true 

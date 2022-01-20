@@ -150,6 +150,12 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 		req.Header.Add(key, value)
 	}
 
+	if !f.config.DisableHTTPAcceptHeader {
+		if req.Header.Get("Accept") == "" {
+			req.Header.Add("Accept", "application/json")
+		}
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
