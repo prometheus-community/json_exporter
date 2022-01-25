@@ -1,3 +1,7 @@
+## 0.4.0 / 2022-01-15
+
+* [FEATURE] Add support for HTTP POST body content #123
+
 ## 0.3.0 / 2021-02-12
 
 :warning: Backward incompatible configuration with previous versions.
