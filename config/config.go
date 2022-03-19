@@ -22,19 +22,28 @@ import (
 
 // Metric contains values that define a metric
 type Metric struct {
-	Name   string
-	Path   string
-	Labels map[string]string
-	Type   MetricType
-	Help   string
-	Values map[string]string
+	Name      string
+	Path      string
+	Labels    map[string]string
+	Type      ScrapeType
+	ValueType ValueType
+	Help      string
+	Values    map[string]string
 }
 
-type MetricType string
+type ScrapeType string
 
 const (
-	ValueScrape  MetricType = "value" // default
-	ObjectScrape MetricType = "object"
+	ValueScrape  ScrapeType = "value" // default
+	ObjectScrape ScrapeType = "object"
+)
+
+type ValueType string
+
+const (
+	ValueTypeGauge   ValueType = "gauge"
+	ValueTypeCounter ValueType = "counter"
+	ValueTypeUntyped ValueType = "untyped"
 )
 
 // Config contains metrics and headers defining a configuration
@@ -68,6 +77,9 @@ func LoadConfig(configPath string) (Config, error) {
 		}
 		if config.Metrics[i].Help == "" {
 			config.Metrics[i].Help = config.Metrics[i].Name
+		}
+		if config.Metrics[i].ValueType == "" {
+			config.Metrics[i].ValueType = ValueTypeUntyped
 		}
 	}
 

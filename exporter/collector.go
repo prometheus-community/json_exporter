@@ -36,6 +36,7 @@ type JSONMetric struct {
 	KeyJSONPath     string
 	ValueJSONPath   string
 	LabelsJSONPaths []string
+	ValueType       prometheus.ValueType
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
