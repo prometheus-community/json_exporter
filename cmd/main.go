@@ -86,9 +86,19 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	defer cancel()
 	r = r.WithContext(ctx)
 
+	module := r.URL.Query().Get("module")
+	if module == "" {
+		http.Error(w, "Module parameter is missing", http.StatusBadRequest)
+		return
+	}
+	if _, ok := config.Modules[module]; !ok {
+		http.Error(w, "Module not found", http.StatusNotFound)
+		return
+	}
+
 	registry := prometheus.NewPedanticRegistry()
 
-	metrics, err := exporter.CreateMetricsList(config)
+	metrics, err := exporter.CreateMetricsList(config.Modules[module])
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
 	}
@@ -102,7 +112,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 		return
 	}
 
-	fetcher := exporter.NewJSONFetcher(ctx, logger, config, r.URL.Query())
+	fetcher := exporter.NewJSONFetcher(ctx, logger, config.Modules[module], r.URL.Query())
 	data, err := fetcher.FetchJSON(target)
 	if err != nil {
 		http.Error(w, "Failed to fetch JSON response. TARGET: "+target+", ERROR: "+err.Error(), http.StatusServiceUnavailable)
