@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -31,6 +32,7 @@ type JSONMetricCollector struct {
 
 type JSONMetric struct {
 	Desc            *prometheus.Desc
+	Type            config.MetricType
 	KeyJSONPath     string
 	ValueJSONPath   string
 	LabelsJSONPaths []string
@@ -44,7 +46,8 @@ func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JSONMetrics {
-		if m.ValueJSONPath == "" { // ScrapeType is 'value'
+		switch m.Type {
+		case config.ValueScrape:
 			value, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false)
 			if err != nil {
 				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
@@ -63,7 +66,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
 				continue
 			}
-		} else { // ScrapeType is 'object'
+
+		case config.ObjectScrape:
 			values, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true)
 			if err != nil {
 				level.Error(mc.Logger).Log("msg", "Failed to extract json objects for metric", "err", err, "metric", m.Desc)
@@ -100,6 +104,9 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				level.Error(mc.Logger).Log("msg", "Failed to convert extracted objects to json", "err", err, "metric", m.Desc)
 				continue
 			}
+		default:
+			level.Error(mc.Logger).Log("msg", "Unknown scrape config type", "type", m.Type, "metric", m.Desc)
+			continue
 		}
 	}
 }
