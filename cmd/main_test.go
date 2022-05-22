@@ -71,6 +71,29 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 	}
 }
 
+func TestDefaultModule(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}))
+	defer target.Close()
+
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	recorder := httptest.NewRecorder()
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+
+	resp := recorder.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Default module test fails unexpectedly, expected 200, got %d", resp.StatusCode)
+	}
+
+	// Module doesn't exist.
+	recorder = httptest.NewRecorder()
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"foo": {}}})
+	resp = recorder.Result()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Default module test fails unexpectedly, expected 400, got %d", resp.StatusCode)
+	}
+}
+
 func TestFailIfTargetMissing(t *testing.T) {
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	recorder := httptest.NewRecorder()

@@ -16,6 +16,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -88,11 +89,11 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	module := r.URL.Query().Get("module")
 	if module == "" {
-		http.Error(w, "Module parameter is missing", http.StatusBadRequest)
-		return
+		module = "default"
 	}
 	if _, ok := config.Modules[module]; !ok {
-		http.Error(w, "Module not found", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Unknown module %q", module), http.StatusBadRequest)
+		level.Debug(logger).Log("msg", "Unknown module", "module", module)
 		return
 	}
 
