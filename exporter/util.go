@@ -63,8 +63,19 @@ func SanitizeValue(s string) (float64, error) {
 }
 
 func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
-	var metrics []JSONMetric
+	var (
+		metrics   []JSONMetric
+		valueType prometheus.ValueType
+	)
 	for _, metric := range c.Metrics {
+		switch metric.ValueType {
+		case config.ValueTypeGauge:
+			valueType = prometheus.GaugeValue
+		case config.ValueTypeCounter:
+			valueType = prometheus.CounterValue
+		default:
+			valueType = prometheus.UntypedValue
+		}
 		switch metric.Type {
 		case config.ValueScrape:
 			var variableLabels, variableLabelsValues []string
@@ -82,6 +93,7 @@ func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
 				),
 				KeyJSONPath:     metric.Path,
 				LabelsJSONPaths: variableLabelsValues,
+				ValueType:       valueType,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
@@ -103,6 +115,7 @@ func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
 					KeyJSONPath:     metric.Path,
 					ValueJSONPath:   valuePath,
 					LabelsJSONPaths: variableLabelsValues,
+					ValueType:       valueType,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
