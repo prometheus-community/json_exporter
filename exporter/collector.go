@@ -32,7 +32,7 @@ type JSONMetricCollector struct {
 
 type JSONMetric struct {
 	Desc            *prometheus.Desc
-	Type            config.MetricType
+	Type            config.ScrapeType
 	KeyJSONPath     string
 	ValueJSONPath   string
 	LabelsJSONPaths []string
