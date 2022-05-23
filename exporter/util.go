@@ -73,6 +73,7 @@ func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
 				variableLabelsValues = append(variableLabelsValues, v)
 			}
 			jsonMetric := JSONMetric{
+				Type: config.ValueScrape,
 				Desc: prometheus.NewDesc(
 					metric.Name,
 					metric.Help,
@@ -92,6 +93,7 @@ func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
 					variableLabelsValues = append(variableLabelsValues, v)
 				}
 				jsonMetric := JSONMetric{
+					Type: config.ObjectScrape,
 					Desc: prometheus.NewDesc(
 						name,
 						metric.Help,
