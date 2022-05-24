@@ -39,35 +39,37 @@ $ cat examples/data.json
 
 $ cat examples/config.yml
 ---
-metrics:
-- name: example_global_value
-  path: "{ .counter }"
-  help: Example of a top-level global value scrape in the json
-  labels:
-    environment: beta # static label
-    location: "planet-{.location}"          # dynamic label
+modules:
+  default:
+    metrics:
+    - name: example_global_value
+      path: "{ .counter }"
+      help: Example of a top-level global value scrape in the json
+      labels:
+        environment: beta # static label
+        location: "planet-{.location}"          # dynamic label
 
-- name: example_value
-  type: object
-  help: Example of sub-level value scrapes from a json
-  path: '{.values[?(@.state == "ACTIVE")]}'
-  labels:
-    environment: beta # static label
-    id: '{.id}'          # dynamic label
-  values:
-    active: 1      # static value
-    count: '{.count}' # dynamic value
-    boolean: '{.some_boolean}'
+    - name: example_value
+      type: object
+      help: Example of sub-level value scrapes from a json
+      path: '{.values[?(@.state == "ACTIVE")]}'
+      labels:
+        environment: beta # static label
+        id: '{.id}'          # dynamic label
+      values:
+        active: 1      # static value
+        count: '{.count}' # dynamic value
+        boolean: '{.some_boolean}'
 
-headers:
-  X-Dummy: my-test-header
+    headers:
+      X-Dummy: my-test-header
 
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
 
 $ ./json_exporter --config.file examples/config.yml &
 
-$ curl "http://localhost:7979/probe?target=http://localhost:8000/examples/data.json" | grep ^example
+$ curl "http://localhost:7979/probe?module=default&target=http://localhost:8000/examples/data.json" | grep ^example
 example_global_value{environment="beta",location="planet-mars"} 1234
 example_value_active{environment="beta",id="id-A"} 1
 example_value_active{environment="beta",id="id-C"} 1
