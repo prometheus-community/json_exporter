@@ -84,9 +84,9 @@ func LoadConfig(configPath string) (Config, error) {
 			if module.Metrics[i].Help == "" {
 				module.Metrics[i].Help = module.Metrics[i].Name
 			}
-		}
-		if config.Metrics[i].ValueType == "" {
-			config.Metrics[i].ValueType = ValueTypeUntyped
+			if module.Metrics[i].ValueType == "" {
+				module.Metrics[i].ValueType = ValueTypeUntyped
+			}
 		}
 	}
 
