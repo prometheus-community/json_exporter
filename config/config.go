@@ -46,8 +46,13 @@ const (
 	ValueTypeUntyped ValueType = "untyped"
 )
 
-// Config contains metrics and headers defining a configuration
+// Config contains multiple modules.
 type Config struct {
+	Modules map[string]Module `yaml:"modules"`
+}
+
+// Module contains metrics and headers defining a configuration
+type Module struct {
 	Headers          map[string]string        `yaml:"headers,omitempty"`
 	Metrics          []Metric                 `yaml:"metrics"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
@@ -71,15 +76,17 @@ func LoadConfig(configPath string) (Config, error) {
 	}
 
 	// Complete Defaults
-	for i := 0; i < len(config.Metrics); i++ {
-		if config.Metrics[i].Type == "" {
-			config.Metrics[i].Type = ValueScrape
-		}
-		if config.Metrics[i].Help == "" {
-			config.Metrics[i].Help = config.Metrics[i].Name
-		}
-		if config.Metrics[i].ValueType == "" {
-			config.Metrics[i].ValueType = ValueTypeUntyped
+	for _, module := range config.Modules {
+		for i := 0; i < len(module.Metrics); i++ {
+			if module.Metrics[i].Type == "" {
+				module.Metrics[i].Type = ValueScrape
+			}
+			if module.Metrics[i].Help == "" {
+				module.Metrics[i].Help = module.Metrics[i].Name
+			}
+			if module.Metrics[i].ValueType == "" {
+				module.Metrics[i].ValueType = ValueTypeUntyped
+			}
 		}
 	}
 

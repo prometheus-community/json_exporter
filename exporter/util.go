@@ -62,7 +62,7 @@ func SanitizeValue(s string) (float64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
-func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
+func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 	var (
 		metrics   []JSONMetric
 		valueType prometheus.ValueType
@@ -127,17 +127,17 @@ func CreateMetricsList(c config.Config) ([]JSONMetric, error) {
 }
 
 type JSONFetcher struct {
-	config config.Config
+	module config.Module
 	ctx    context.Context
 	logger log.Logger
 	method string
 	body   io.Reader
 }
 
-func NewJSONFetcher(ctx context.Context, logger log.Logger, c config.Config, tplValues url.Values) *JSONFetcher {
-	method, body := renderBody(logger, c.Body, tplValues)
+func NewJSONFetcher(ctx context.Context, logger log.Logger, m config.Module, tplValues url.Values) *JSONFetcher {
+	method, body := renderBody(logger, m.Body, tplValues)
 	return &JSONFetcher{
-		config: c,
+		module: m,
 		ctx:    ctx,
 		logger: logger,
 		method: method,
@@ -146,7 +146,7 @@ func NewJSONFetcher(ctx context.Context, logger log.Logger, c config.Config, tpl
 }
 
 func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
-	httpClientConfig := f.config.HTTPClientConfig
+	httpClientConfig := f.module.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
 		level.Error(f.logger).Log("msg", "Error generating HTTP client", "err", err)
@@ -161,7 +161,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 		return nil, err
 	}
 
-	for key, value := range f.config.Headers {
+	for key, value := range f.module.Headers {
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {

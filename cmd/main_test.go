@@ -32,9 +32,9 @@ func TestFailIfSelfSignedCA(t *testing.T) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{})
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -45,13 +45,21 @@ func TestFailIfSelfSignedCA(t *testing.T) {
 }
 
 func TestSucceedIfSelfSignedCA(t *testing.T) {
-	c := config.Config{}
-	c.HTTPClientConfig.TLSConfig.InsecureSkipVerify = true
+	c := config.Config{
+		Modules: map[string]config.Module{
+			"default": {
+				HTTPClientConfig: pconfig.HTTPClientConfig{
+					TLSConfig: pconfig.TLSConfig{
+						InsecureSkipVerify: true,
+					},
+				},
+			}},
+	}
 	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
@@ -60,6 +68,29 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Succeed if (not strict) selfsigned CA test fails unexpectedly, got %s", body)
+	}
+}
+
+func TestDefaultModule(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}))
+	defer target.Close()
+
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	recorder := httptest.NewRecorder()
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+
+	resp := recorder.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Default module test fails unexpectedly, expected 200, got %d", resp.StatusCode)
+	}
+
+	// Module doesn't exist.
+	recorder = httptest.NewRecorder()
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"foo": {}}})
+	resp = recorder.Result()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Default module test fails unexpectedly, expected 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -86,9 +117,9 @@ func TestDefaultAcceptHeader(t *testing.T) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{})
+	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -118,7 +149,7 @@ func TestCorrectResponse(t *testing.T) {
 			t.Fatalf("Failed to load config file %s", test.ConfigFile)
 		}
 
-		req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL+test.ServeFile, nil)
+		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL+test.ServeFile, nil)
 		recorder := httptest.NewRecorder()
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
@@ -145,15 +176,21 @@ func TestBasicAuth(t *testing.T) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	c := config.Config{}
-	auth := &pconfig.BasicAuth{
-		Username: username,
-		Password: pconfig.Secret(password),
+	c := config.Config{
+		Modules: map[string]config.Module{
+			"default": {
+				HTTPClientConfig: pconfig.HTTPClientConfig{
+					BasicAuth: &pconfig.BasicAuth{
+						Username: username,
+						Password: pconfig.Secret(password),
+					},
+				},
+			},
+		},
 	}
 
-	c.HTTPClientConfig.BasicAuth = auth
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
@@ -175,11 +212,16 @@ func TestBearerToken(t *testing.T) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	c := config.Config{}
+	c := config.Config{
+		Modules: map[string]config.Module{"default": {
+			HTTPClientConfig: pconfig.HTTPClientConfig{
+				BearerToken: pconfig.Secret(token),
+			},
+		}},
+	}
 
-	c.HTTPClientConfig.BearerToken = pconfig.Secret(token)
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
@@ -206,10 +248,15 @@ func TestHTTPHeaders(t *testing.T) {
 	}))
 	defer target.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	c := config.Config{}
-	c.Headers = headers
+	c := config.Config{
+		Modules: map[string]config.Module{
+			"default": {
+				Headers: headers,
+			},
+		},
+	}
 
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
@@ -264,9 +311,15 @@ func TestBodyPostTemplate(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("POST", "http://example.com/foo"+"?target="+target.URL, strings.NewReader(test.Body.Content))
+		req := httptest.NewRequest("POST", "http://example.com/foo"+"?module=default&target="+target.URL, strings.NewReader(test.Body.Content))
 		recorder := httptest.NewRecorder()
-		c := config.Config{Body: test.Body}
+		c := config.Config{
+			Modules: map[string]config.Module{
+				"default": {
+					Body: test.Body,
+				},
+			},
+		}
 
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
@@ -351,7 +404,7 @@ func TestBodyPostQuery(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("POST", "http://example.com/foo"+"?target="+target.URL, strings.NewReader(test.Body.Content))
+		req := httptest.NewRequest("POST", "http://example.com/foo"+"?module=default&target="+target.URL, strings.NewReader(test.Body.Content))
 		q := req.URL.Query()
 		for k, v := range test.QueryParams {
 			q.Add(k, v)
@@ -359,7 +412,13 @@ func TestBodyPostQuery(t *testing.T) {
 		req.URL.RawQuery = q.Encode()
 
 		recorder := httptest.NewRecorder()
-		c := config.Config{Body: test.Body}
+		c := config.Config{
+			Modules: map[string]config.Module{
+				"default": {
+					Body: test.Body,
+				},
+			},
+		}
 
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
