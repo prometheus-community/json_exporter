@@ -179,7 +179,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 		resp.Body.Close()
 	}()
 
-	if resp.StatusCode/100 != 2 {
+	if !f.module.IgnoreStatus && resp.StatusCode/100 != 2 {
 		return nil, errors.New(resp.Status)
 	}
 

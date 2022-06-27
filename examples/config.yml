@@ -43,3 +43,6 @@ modules:
     #     username: myuser
     #     #password: veryverysecret
     #     password_file: /tmp/mysecret.txt
+
+    # Do not fail target scrape in case of non-2xx http status, still try to parse json from the response.
+    # ignore_status: true

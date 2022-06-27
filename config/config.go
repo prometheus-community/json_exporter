@@ -57,6 +57,7 @@ type Module struct {
 	Metrics          []Metric                 `yaml:"metrics"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
 	Body             Body                     `yaml:"body,omitempty"`
+	IgnoreStatus     bool                     `yaml:"ignore_status,omitempty"`
 }
 
 type Body struct {
