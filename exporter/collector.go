@@ -59,7 +59,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 
 				ch <- prometheus.MustNewConstMetric(
 					m.Desc,
-					prometheus.UntypedValue,
+					m.ValueType,
 					floatValue,
 					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
 				)
@@ -92,7 +92,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					if floatValue, err := SanitizeValue(value); err == nil {
 						ch <- prometheus.MustNewConstMetric(
 							m.Desc,
-							prometheus.UntypedValue,
+							m.ValueType,
 							floatValue,
 							extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)...,
 						)
