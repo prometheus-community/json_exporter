@@ -5,6 +5,7 @@ modules:
     - name: example_global_value
       path: "{ .counter }"
       help: Example of a top-level global value scrape in the json
+      valuetype: gauge
       labels:
         environment: beta # static label
         location: "planet-{.location}"          # dynamic label
@@ -13,6 +14,7 @@ modules:
       type: object
       help: Example of sub-level value scrapes from a json
       path: '{.values[?(@.state == "ACTIVE")]}'
+      valuetype: counter
       labels:
         environment: beta # static label
         id: '{.id}'          # dynamic label
