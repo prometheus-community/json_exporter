@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/exporter-toolkit v0.7.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/client-go v0.24.0
+	k8s.io/client-go v0.24.2
 )
 
 require (
