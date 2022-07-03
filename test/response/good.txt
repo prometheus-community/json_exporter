@@ -1,15 +1,15 @@
 # HELP example_global_value Example of a top-level global value scrape in the json
-# TYPE example_global_value untyped
+# TYPE example_global_value gauge
 example_global_value{environment="beta",location="planet-mars"} 1234
 # HELP example_value_active Example of sub-level value scrapes from a json
-# TYPE example_value_active untyped
+# TYPE example_value_active counter
 example_value_active{environment="beta",id="id-A"} 1
 example_value_active{environment="beta",id="id-C"} 1
 # HELP example_value_boolean Example of sub-level value scrapes from a json
-# TYPE example_value_boolean untyped
+# TYPE example_value_boolean counter
 example_value_boolean{environment="beta",id="id-A"} 1
 example_value_boolean{environment="beta",id="id-C"} 0
 # HELP example_value_count Example of sub-level value scrapes from a json
-# TYPE example_value_count untyped
+# TYPE example_value_count counter
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
