@@ -44,5 +44,5 @@ modules:
     #     #password: veryverysecret
     #     password_file: /tmp/mysecret.txt
 
-    # Do not fail target scrape in case of non-2xx http status, still try to parse json from the response.
-    # ignore_status: true
+    # Accepted status codes for this probe. Defaults to 2xx.
+    # valid_status_codes: [ <int>, ... | default = 2xx ]
