@@ -57,6 +57,7 @@ type Module struct {
 	Metrics          []Metric                 `yaml:"metrics"`
 	HTTPClientConfig pconfig.HTTPClientConfig `yaml:"http_client_config,omitempty"`
 	Body             Body                     `yaml:"body,omitempty"`
+	ValidStatusCodes []int                    `yaml:"valid_status_codes,omitempty"`
 }
 
 type Body struct {

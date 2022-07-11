@@ -43,3 +43,6 @@ modules:
     #     username: myuser
     #     #password: veryverysecret
     #     password_file: /tmp/mysecret.txt
+
+    # Accepted status codes for this probe. Defaults to 2xx.
+    # valid_status_codes: [ <int>, ... | default = 2xx ]
