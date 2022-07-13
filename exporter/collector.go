@@ -16,6 +16,7 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -37,6 +38,7 @@ type JSONMetric struct {
 	ValueJSONPath   string
 	LabelsJSONPaths []string
 	ValueType       prometheus.ValueType
+	ValueConverter	map[string]map[string]string
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -84,9 +86,21 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						continue
 					}
 					value, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false)
+
 					if err != nil {
 						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
+					}
+					
+					//convert dynamic value if it's in the valueconverter
+					if m.ValueConverter != nil {
+						if value_mappings, ok := m.ValueConverter[m.ValueJSONPath]; ok {
+							value = strings.ToLower(value)
+
+							if _, ok := value_mappings[value]; ok { 
+								value = value_mappings[value]
+							}
+						}
 					}
 
 					if floatValue, err := SanitizeValue(value); err == nil {

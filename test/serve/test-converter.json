@@ -1,0 +1,16 @@
+{
+    "name": "Test Converter",
+    "state": "ACTIVE",
+    "responseCode": 2,
+    "values": [ 
+        {
+            "name": "id-A",
+            "state": "ACTIVE"
+        },
+        {
+            "name": "id-B",
+            "state": "INACTIVE"
+        }
+    ]
+}
+        

@@ -104,6 +104,20 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels = append(variableLabels, k)
 					variableLabelsValues = append(variableLabelsValues, v)
 				}
+				
+				var valueConverters map[string]map[string]string
+				//convert all keys to lowercase 
+				if metric.ValueConverter != nil {
+					valueConverters = make(map[string]map[string]string)
+					for values_key, inner_map := range metric.ValueConverter {
+						//make the mappings for each value key lowercase
+						valueConverters[values_key] = make(map[string]string)	
+						for conversion_from, conversion_to := range(inner_map) {												
+							valueConverters[values_key][strings.ToLower(conversion_from)] = conversion_to
+						}
+					}				
+				}
+
 				jsonMetric := JSONMetric{
 					Type: config.ObjectScrape,
 					Desc: prometheus.NewDesc(
@@ -116,6 +130,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					ValueJSONPath:   valuePath,
 					LabelsJSONPaths: variableLabelsValues,
 					ValueType:       valueType,
+					ValueConverter:  valueConverters,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
