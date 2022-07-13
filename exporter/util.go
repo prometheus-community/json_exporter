@@ -104,19 +104,8 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels = append(variableLabels, k)
 					variableLabelsValues = append(variableLabelsValues, v)
 				}
-				
-				var valueConverters map[string]map[string]string
-				//convert all keys to lowercase 
-				if metric.ValueConverter != nil {
-					valueConverters = make(map[string]map[string]string)
-					for values_key, inner_map := range metric.ValueConverter {
-						//make the mappings for each value key lowercase
-						valueConverters[values_key] = make(map[string]string)	
-						for conversion_from, conversion_to := range(inner_map) {												
-							valueConverters[values_key][strings.ToLower(conversion_from)] = conversion_to
-						}
-					}				
-				}
+
+				var valueConverters config.ValueConverterType = initializeValueConverter(metric)
 
 				jsonMetric := JSONMetric{
 					Type: config.ObjectScrape,
@@ -244,4 +233,23 @@ func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (meth
 		br = strings.NewReader(b.String())
 	}
 	return
+}
+
+// Initializes and returns a ValueConverter object. nil if there aren't any conversions
+func initializeValueConverter(metric config.Metric) config.ValueConverterType {
+	var valueConverters config.ValueConverterType
+
+	//convert all keys to lowercase
+	if metric.ValueConverter != nil {
+		valueConverters = make(config.ValueConverterType)
+		for values_key, inner_map := range metric.ValueConverter {
+			//make the mappings for each value key lowercase
+			valueConverters[values_key] = make(map[string]string)
+			for conversion_from, conversion_to := range inner_map {
+				valueConverters[values_key][strings.ToLower(conversion_from)] = conversion_to
+			}
+		}
+	}
+
+	return valueConverters
 }

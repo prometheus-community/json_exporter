@@ -38,7 +38,7 @@ type JSONMetric struct {
 	ValueJSONPath   string
 	LabelsJSONPaths []string
 	ValueType       prometheus.ValueType
-	ValueConverter	map[string]map[string]string
+	ValueConverter  config.ValueConverterType
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -91,17 +91,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
 					}
-					
-					//convert dynamic value if it's in the valueconverter
-					if m.ValueConverter != nil {
-						if value_mappings, ok := m.ValueConverter[m.ValueJSONPath]; ok {
-							value = strings.ToLower(value)
 
-							if _, ok := value_mappings[value]; ok { 
-								value = value_mappings[value]
-							}
-						}
-					}
+					value = convertValueIfNeeded(m, value)
 
 					if floatValue, err := SanitizeValue(value); err == nil {
 						ch <- prometheus.MustNewConstMetric(
@@ -170,4 +161,18 @@ func extractLabels(logger log.Logger, data []byte, paths []string) []string {
 		}
 	}
 	return labels
+}
+
+// Returns the conversion of the dynamic value- if it exists in the ValueConverter configuration
+func convertValueIfNeeded(m JSONMetric, value string) string {
+	if m.ValueConverter != nil {
+		if value_mappings, hasPathKey := m.ValueConverter[m.ValueJSONPath]; hasPathKey {
+			value = strings.ToLower(value)
+
+			if _, hasValueKey := value_mappings[value]; hasValueKey {
+				value = value_mappings[value]
+			}
+		}
+	}
+	return value
 }
