@@ -60,6 +60,18 @@ modules:
         active: 1      # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+      
+    - name: example_convert
+      type: object
+      path: '{.values[0,1]}'
+      labels:
+        state: '{.state}'
+      values:
+        state: '{.state}'
+      valueconverter:
+        '{.state}': #convert value 'state' into a number
+          active: 1
+          inactive: 2
 
     headers:
       X-Dummy: my-test-header
@@ -70,6 +82,8 @@ Serving HTTP on 0.0.0.0 port 8000 ...
 $ ./json_exporter --config.file examples/config.yml &
 
 $ curl "http://localhost:7979/probe?module=default&target=http://localhost:8000/examples/data.json" | grep ^example
+example_convert_state{state="ACTIVE"} 1
+example_convert_state{state="INACTIVE"} 2
 example_global_value{environment="beta",location="planet-mars"} 1234
 example_value_active{environment="beta",id="id-A"} 1
 example_value_active{environment="beta",id="id-C"} 1
