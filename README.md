@@ -85,7 +85,7 @@ Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_
 
 ## Using custom timestamps
 
-This exporter allows you to use a field of the metric as the (unix/epoch) timestamp for the data as an int64. However, this may lead to unexpected behaviour, as the prometheus implements a [Staleness](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness) mechanism. Effectively, this means that samples older than 5 minutes can not be scrapped and will be ignored by the prometheus instance.
+This exporter allows you to use a field of the metric as the (unix/epoch) timestamp for the data as an int64. However, this may lead to unexpected behaviour, as the prometheus implements a [Staleness](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness) mechanism. Including timestamps in metrics disabled this staleness handling and can make data visible for longer than expected.
 
 ## Exposing metrics through HTTPS
 
