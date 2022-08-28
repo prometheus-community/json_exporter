@@ -83,6 +83,10 @@ $ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/promethe
 ```
 Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
+## Using custom timestamps
+
+This exporter allows you to use a field of the metric as the (unix/epoch) timestamp for the data as an int64. However, this may lead to unexpected behaviour, as the prometheus implements a [Staleness](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness) mechanism. Including timestamps in metrics disabled this staleness handling and can make data visible for longer than expected.
+
 ## Exposing metrics through HTTPS
 
 TLS configuration supported by this exporter can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.5.1/docs/web-configuration.md)
