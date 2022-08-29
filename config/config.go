@@ -27,6 +27,7 @@ type Metric struct {
 	Labels         map[string]string
 	Type           ScrapeType
 	ValueType      ValueType
+	EpochTimestamp string
 	Help           string
 	Values         map[string]string
 	ValueConverter ValueConverterType

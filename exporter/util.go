@@ -62,6 +62,19 @@ func SanitizeValue(s string) (float64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
+func SanitizeIntValue(s string) (int64, error) {
+	var err error
+	var value int64
+	var resultErr string
+
+	if value, err = strconv.ParseInt(s, 10, 64); err == nil {
+		return value, nil
+	}
+	resultErr = fmt.Sprintf("%s", err)
+
+	return value, fmt.Errorf(resultErr)
+}
+
 func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 	var (
 		metrics   []JSONMetric
@@ -91,9 +104,10 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels,
 					nil,
 				),
-				KeyJSONPath:     metric.Path,
-				LabelsJSONPaths: variableLabelsValues,
-				ValueType:       valueType,
+				KeyJSONPath:            metric.Path,
+				LabelsJSONPaths:        variableLabelsValues,
+				ValueType:              valueType,
+				EpochTimestampJSONPath: metric.EpochTimestamp,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
@@ -115,11 +129,12 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 						variableLabels,
 						nil,
 					),
-					KeyJSONPath:     metric.Path,
-					ValueJSONPath:   valuePath,
-					LabelsJSONPaths: variableLabelsValues,
-					ValueType:       valueType,
+					KeyJSONPath:            metric.Path,
+					ValueJSONPath:          valuePath,
+					LabelsJSONPaths:        variableLabelsValues,
+					ValueType:              valueType,
 					ValueConverter:  valueConverters,
+					EpochTimestampJSONPath: metric.EpochTimestamp,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
