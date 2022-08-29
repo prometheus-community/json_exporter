@@ -133,7 +133,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					ValueJSONPath:          valuePath,
 					LabelsJSONPaths:        variableLabelsValues,
 					ValueType:              valueType,
-					ValueConverter:  valueConverters,
+					ValueConverter:         valueConverters,
 					EpochTimestampJSONPath: metric.EpochTimestamp,
 				}
 				metrics = append(metrics, jsonMetric)

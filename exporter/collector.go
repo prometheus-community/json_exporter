@@ -39,7 +39,7 @@ type JSONMetric struct {
 	ValueJSONPath          string
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
-	ValueConverter  config.ValueConverterType
+	ValueConverter         config.ValueConverterType
 	EpochTimestampJSONPath string
 }
 
