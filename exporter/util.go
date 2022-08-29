@@ -242,11 +242,11 @@ func initializeValueConverter(metric config.Metric) config.ValueConverterType {
 	//convert all keys to lowercase
 	if metric.ValueConverter != nil {
 		valueConverters = make(config.ValueConverterType)
-		for values_key, inner_map := range metric.ValueConverter {
+		for valuesKey, innerMap := range metric.ValueConverter {
 			//make the mappings for each value key lowercase
-			valueConverters[values_key] = make(map[string]string)
-			for conversion_from, conversion_to := range inner_map {
-				valueConverters[values_key][strings.ToLower(conversion_from)] = conversion_to
+			valueConverters[valuesKey] = make(map[string]string)
+			for conversionFrom, conversionTo := range innerMap {
+				valueConverters[valuesKey][strings.ToLower(conversionFrom)] = conversionTo
 			}
 		}
 	}

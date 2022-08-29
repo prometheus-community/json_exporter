@@ -166,11 +166,11 @@ func extractLabels(logger log.Logger, data []byte, paths []string) []string {
 // Returns the conversion of the dynamic value- if it exists in the ValueConverter configuration
 func convertValueIfNeeded(m JSONMetric, value string) string {
 	if m.ValueConverter != nil {
-		if value_mappings, hasPathKey := m.ValueConverter[m.ValueJSONPath]; hasPathKey {
+		if valueMappings, hasPathKey := m.ValueConverter[m.ValueJSONPath]; hasPathKey {
 			value = strings.ToLower(value)
 
-			if _, hasValueKey := value_mappings[value]; hasValueKey {
-				value = value_mappings[value]
+			if _, hasValueKey := valueMappings[value]; hasValueKey {
+				value = valueMappings[value]
 			}
 		}
 	}
