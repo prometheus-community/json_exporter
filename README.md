@@ -9,7 +9,7 @@ Checkout the [examples](/examples) directory for sample exporter configuration, 
 #### :warning: The configuration syntax has changed in version `0.3.x`. If you are migrating from `0.2.x`, then please use the above mentioned JSONPath guide for correct configuration syntax.
 
 ## Example Usage
-
+### Preview the example json data
 ```console
 $ cat examples/data.json
 {
@@ -36,7 +36,10 @@ $ cat examples/data.json
     ],
     "location": "mars"
 }
+```
 
+### Preview the example config yaml
+```console
 $ cat examples/config.yml
 ---
 modules:
@@ -63,12 +66,27 @@ modules:
 
     headers:
       X-Dummy: my-test-header
+```
 
+### Test run 
+Spin up a simple server
+```console
 $ python -m SimpleHTTPServer 8000 &
 Serving HTTP on 0.0.0.0 port 8000 ...
+```
+In Python 3, try the following otherwise you might encounter errors like "No module named 'SimpleHTTPServer'"
+```
+$ python -m http.server 8000
+```
 
+Build and run the json_exporter
+```
+$ make build
 $ ./json_exporter --config.file examples/config.yml &
+```
 
+Validate it's running correctly
+```
 $ curl "http://localhost:7979/probe?module=default&target=http://localhost:8000/examples/data.json" | grep ^example
 example_global_value{environment="beta",location="planet-mars"} 1234
 example_value_active{environment="beta",id="id-A"} 1
@@ -77,11 +95,60 @@ example_value_boolean{environment="beta",id="id-A"} 1
 example_value_boolean{environment="beta",id="id-C"} 0
 example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
+```
 
-# To test through prometheus:
+### To test through prometheus:
+Preview the prometheus config file and make changes if necessary.
+
+NOTE: If you use Docker for Mac or Docker for Windows, you can’t use `localhost:9090`, but must use `host.docker.internal:9090`. This has to do with the virtual machines used to implement Docker on those operating systems. You should not use this in production. More information check [here](https://prometheus.io/docs/guides/multi-target-exporter/#querying-multi-target-exporters-with-prometheus)
+
+```console
+$ cat examples/prometheus.yml
+scrape_configs:
+
+  ## gather metrics of prometheus itself
+- job_name: prometheus
+  static_configs:
+    - targets:
+      - localhost:9090  ## For Windows and macOS replace with - host.docker.internal:9090
+
+  ## gather the metrics of json_exporter application itself
+- job_name: json_exporter
+  static_configs:
+    - targets:
+      - localhost:7979 ## Location of the json exporter's real <hostname>:<port>. For Windows and macOS replace with - host.docker.internal:7979
+
+  ## gather the metrics from third party json sources, via the json exporter
+- job_name: json
+  metrics_path: /probe
+  params:
+    module: [default]
+  static_configs:
+    - targets:
+      - http://host-1.foobar.com/dummy/data.json
+      - http://host-2:8000/other-examples/data.json
+      - http://localhost:8000/examples/data.json ## Used from the example steps in Readme
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: localhost:7979 ## Location of the json exporter's real <hostname>:<port>. For Windows and macOS replace with - host.docker.internal:7979
+```
+
+Run through docker on Linux
+```
 $ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
 ```
-Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
+Run through docker on Windows and macOS
+```
+$ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+```
+
+Then head over 
+* to check the scraped metrics at: http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 
+* to check the targets at: http://localhost:9090/targets 
 
 ## Using custom timestamps
 
