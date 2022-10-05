@@ -118,6 +118,9 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels = append(variableLabels, k)
 					variableLabelsValues = append(variableLabelsValues, v)
 				}
+
+				var valueConverters config.ValueConverterType = initializeValueConverter(metric)
+
 				jsonMetric := JSONMetric{
 					Type: config.ObjectScrape,
 					Desc: prometheus.NewDesc(
@@ -130,6 +133,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					ValueJSONPath:          valuePath,
 					LabelsJSONPaths:        variableLabelsValues,
 					ValueType:              valueType,
+					ValueConverter:         valueConverters,
 					EpochTimestampJSONPath: metric.EpochTimestamp,
 				}
 				metrics = append(metrics, jsonMetric)
@@ -244,4 +248,23 @@ func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (meth
 		br = strings.NewReader(b.String())
 	}
 	return
+}
+
+// Initializes and returns a ValueConverter object. nil if there aren't any conversions
+func initializeValueConverter(metric config.Metric) config.ValueConverterType {
+	var valueConverters config.ValueConverterType
+
+	//convert all keys to lowercase
+	if metric.ValueConverter != nil {
+		valueConverters = make(config.ValueConverterType)
+		for valuesKey, innerMap := range metric.ValueConverter {
+			//make the mappings for each value key lowercase
+			valueConverters[valuesKey] = make(map[string]string)
+			for conversionFrom, conversionTo := range innerMap {
+				valueConverters[valuesKey][strings.ToLower(conversionFrom)] = conversionTo
+			}
+		}
+	}
+
+	return valueConverters
 }

@@ -25,6 +25,19 @@ modules:
         active: 1      # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+
+    - name: example_convert
+      type: object
+      path: '{.values[0,1]}'
+      labels:
+        state: '{.state}'
+      values:
+        state: '{.state}'
+      valueconverter:
+        '{.state}': #convert value 'state' in JSON into a number
+          active: 1
+          inactive: 2
+
     headers:
       X-Dummy: my-test-header
 
