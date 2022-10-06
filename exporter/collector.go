@@ -16,7 +16,6 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/go-kit/log"
@@ -39,7 +38,6 @@ type JSONMetric struct {
 	ValueJSONPath          string
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
-	ValueConverter         config.ValueConverterType
 	EpochTimestampJSONPath string
 }
 
@@ -88,13 +86,10 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						continue
 					}
 					value, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false)
-
 					if err != nil {
 						level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
 					}
-
-					value = convertValueIfNeeded(m, value)
 
 					if floatValue, err := SanitizeValue(value); err == nil {
 						metric := prometheus.MustNewConstMetric(
@@ -166,19 +161,6 @@ func extractLabels(logger log.Logger, data []byte, paths []string) []string {
 	return labels
 }
 
-// Returns the conversion of the dynamic value- if it exists in the ValueConverter configuration
-func convertValueIfNeeded(m JSONMetric, value string) string {
-	if m.ValueConverter != nil {
-		if valueMappings, hasPathKey := m.ValueConverter[m.ValueJSONPath]; hasPathKey {
-			value = strings.ToLower(value)
-
-			if _, hasValueKey := valueMappings[value]; hasValueKey {
-				value = valueMappings[value]
-			}
-		}
-	}
-	return value
-}
 func timestampMetric(logger log.Logger, m JSONMetric, data []byte, pm prometheus.Metric) prometheus.Metric {
 	if m.EpochTimestampJSONPath == "" {
 		return pm
