@@ -9,7 +9,7 @@ modules:
         environment: beta # static label
         location: "planet-{.location}"          # dynamic label
     - name: example_timestamped_value
-      path: "{ .values[?(@.state == "INACTIVE")] }"
+      path: '{ .values[?(@.state == "INACTIVE")] }'
       epochTimestamp: "{ .timestamp }"
       help: Example of a timestamped value scrape in the json
       labels:
