@@ -64,8 +64,8 @@ modules:
     headers:
       X-Dummy: my-test-header
 
-$ python -m SimpleHTTPServer 8000 &
-Serving HTTP on 0.0.0.0 port 8000 ...
+$ python3 -m http.server 8000 &
+Serving HTTP on :: port 8000 (http://[::]:8000/) ...
 
 $ ./json_exporter --config.file examples/config.yml &
 
@@ -79,7 +79,7 @@ example_value_count{environment="beta",id="id-A"} 1
 example_value_count{environment="beta",id="id-C"} 3
 
 # To test through prometheus:
-$ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml --network host prom/prometheus
+$ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
 ```
 Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
