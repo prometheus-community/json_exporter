@@ -30,14 +30,14 @@ import (
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	configFile    = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
-	listenAddress = kingpin.Flag("web.listen-address", "The address to listen on for HTTP requests.").Default(":7979").String()
-	configCheck   = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
-	tlsConfigFile = kingpin.Flag("web.config", "[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.").Default("").String()
+	configFile   = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
+	configCheck  = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
+	toolkitFlags = kingpinflag.AddFlags(kingpin.CommandLine, ":7979")
 )
 
 func Run() {
@@ -74,8 +74,8 @@ func Run() {
 		probeHandler(w, req, logger, config)
 	})
 
-	server := &http.Server{Addr: *listenAddress}
-	if err := web.ListenAndServe(server, *tlsConfigFile, logger); err != nil {
+	server := &http.Server{}
+	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
 		level.Error(logger).Log("msg", "Failed to start the server", "err", err)
 		os.Exit(1)
 	}
