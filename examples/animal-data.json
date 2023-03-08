@@ -1,0 +1,17 @@
+[
+  {
+    "noun": "lion",
+    "population": 123,
+    "predator": true
+  },
+  {
+    "noun": "deer",
+    "population": 456,
+    "predator": false
+  },
+  {
+    "noun": "pigeon",
+    "population": 789,
+    "predator": false
+  }
+]
