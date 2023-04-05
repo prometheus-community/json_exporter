@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/exporter-toolkit v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/client-go v0.26.2
+	k8s.io/client-go v0.26.3
 )
 
 require (
