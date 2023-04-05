@@ -16,9 +16,9 @@ package cmd
 import (
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -37,7 +37,7 @@ func TestFailIfSelfSignedCA(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Fatalf("Fail if (not strict) selfsigned CA test fails unexpectedly, got %s", body)
@@ -64,7 +64,7 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Succeed if (not strict) selfsigned CA test fails unexpectedly, got %s", body)
@@ -100,7 +100,7 @@ func TestFailIfTargetMissing(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), config.Config{})
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("Fail if 'target' query parameter missing test fails unexpectedly, got %s", body)
@@ -122,7 +122,7 @@ func TestDefaultAcceptHeader(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Default 'Accept: application/json' header test fails unexpectedly, got %s", body)
@@ -154,9 +154,9 @@ func TestCorrectResponse(t *testing.T) {
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
 		resp := recorder.Result()
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 
-		expected, _ := ioutil.ReadFile(test.ResponseFile)
+		expected, _ := os.ReadFile(test.ResponseFile)
 
 		if test.ShouldSucceed && string(body) != string(expected) {
 			t.Fatalf("Correct response validation test %d fails unexpectedly.\nGOT:\n%s\nEXPECTED:\n%s", i, body, expected)
@@ -194,7 +194,7 @@ func TestBasicAuth(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("BasicAuth test fails unexpectedly. Got: %s", body)
@@ -225,7 +225,7 @@ func TestBearerToken(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("BearerToken test fails unexpectedly. Got: %s", body)
@@ -261,7 +261,7 @@ func TestHTTPHeaders(t *testing.T) {
 	probeHandler(recorder, req, log.NewNopLogger(), c)
 
 	resp := recorder.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Setting custom headers failed unexpectedly. Got: %s", body)
@@ -324,7 +324,7 @@ func TestBodyPostTemplate(t *testing.T) {
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
 		resp := recorder.Result()
-		respBody, _ := ioutil.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(resp.Body)
 
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("POST body content failed. Got: %s", respBody)
@@ -423,7 +423,7 @@ func TestBodyPostQuery(t *testing.T) {
 		probeHandler(recorder, req, log.NewNopLogger(), c)
 
 		resp := recorder.Result()
-		respBody, _ := ioutil.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(resp.Body)
 
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("POST body content failed. Got: %s", respBody)

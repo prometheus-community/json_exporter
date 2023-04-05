@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
@@ -31,12 +32,15 @@ import (
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	configFile   = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
-	configCheck  = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
+	configFile  = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
+	configCheck = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
+	metricsPath = kingpin.Flag(
+		"web.telemetry-path",
+		"Path under which to expose metrics.",
+	).Default("/metrics").String()
 	toolkitFlags = kingpinflag.AddFlags(kingpin.CommandLine, ":7979")
 )
 
@@ -69,10 +73,29 @@ func Run() {
 		os.Exit(0)
 	}
 
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		probeHandler(w, req, logger, config)
 	})
+	if *metricsPath != "/" && *metricsPath != "" {
+		landingConfig := web.LandingConfig{
+			Name:        "JSON Exporter",
+			Description: "Prometheus Exporter for converting json to metrics",
+			Version:     version.Info(),
+			Links: []web.LandingLinks{
+				{
+					Address: *metricsPath,
+					Text:    "Metrics",
+				},
+			},
+		}
+		landingPage, err := web.NewLandingPage(landingConfig)
+		if err != nil {
+			level.Error(logger).Log("err", err)
+			os.Exit(1)
+		}
+		http.Handle("/", landingPage)
+	}
 
 	server := &http.Server{}
 	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {

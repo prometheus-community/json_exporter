@@ -14,7 +14,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	pconfig "github.com/prometheus/common/config"
 	"gopkg.in/yaml.v2"
@@ -68,7 +68,7 @@ type Body struct {
 
 func LoadConfig(configPath string) (Config, error) {
 	var config Config
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return config, err
 	}
