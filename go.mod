@@ -8,7 +8,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.44.0
-	github.com/prometheus/exporter-toolkit v0.9.1
+	github.com/prometheus/exporter-toolkit v0.10.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.27.1
 )
@@ -36,7 +36,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
