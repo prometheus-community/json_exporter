@@ -1,3 +1,8 @@
+## 0.6.0 / 2023-06-06
+
+* [FEATURE] Allow timestamps from metrics #167
+* [FEATURE] Support Value Conversions #172
+
 ## 0.5.0 / 2022-07-03
 
 Breaking Change:
