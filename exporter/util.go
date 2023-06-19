@@ -21,6 +21,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -74,7 +75,7 @@ func SanitizeIntValue(s string) (int64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
-func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
+func CreateMetricsList(c config.Module, logger log.Logger) ([]JSONMetric, error) {
 	var (
 		metrics   []JSONMetric
 		valueType prometheus.ValueType
@@ -91,9 +92,17 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 		switch metric.Type {
 		case config.ValueScrape:
 			var variableLabels, variableLabelsValues []string
+			var err error
+			var re *regexp.Regexp
 			for k, v := range metric.Labels {
 				variableLabels = append(variableLabels, k)
 				variableLabelsValues = append(variableLabelsValues, v)
+			}
+			if metric.Regex != "" {
+				if re, err = regexp.Compile(metric.Regex); err != nil {
+					level.Error(logger).Log("msg", "invalid regex expression", "err", err)
+					continue
+				}
 			}
 			jsonMetric := JSONMetric{
 				Type: config.ValueScrape,
@@ -107,6 +116,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 				LabelsJSONPaths:        variableLabelsValues,
 				ValueType:              valueType,
 				EpochTimestampJSONPath: metric.EpochTimestamp,
+				Regex:                  re,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
