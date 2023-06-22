@@ -41,7 +41,7 @@ type JSONMetric struct {
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
-	Regex                  *regexp.Regexp
+	IncludeRegex           *regexp.Regexp
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -59,9 +59,9 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 				continue
 			}
-			if m.Regex != nil {
-				if value = m.Regex.FindString(value); value == "" {
-					level.Error(mc.Logger).Log("msg", fmt.Sprintf("No matching for this pattern '%s'", m.Regex.String()))
+			if m.IncludeRegex != nil {
+				if value = m.IncludeRegex.FindString(value); value == "" {
+					level.Error(mc.Logger).Log("msg", fmt.Sprintf("No matching for this pattern '%s'", m.IncludeRegex.String()))
 					continue
 				}
 			}

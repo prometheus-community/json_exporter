@@ -116,7 +116,7 @@ func CreateMetricsList(c config.Module, logger log.Logger) ([]JSONMetric, error)
 				LabelsJSONPaths:        variableLabelsValues,
 				ValueType:              valueType,
 				EpochTimestampJSONPath: metric.EpochTimestamp,
-				Regex:                  re,
+				IncludeRegex:           re,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
