@@ -30,7 +30,7 @@ type Metric struct {
 	EpochTimestamp string
 	Help           string
 	Values         map[string]string
-	Regex          string
+	IncludeRegex   string
 }
 
 type ScrapeType string
