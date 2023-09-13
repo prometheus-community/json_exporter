@@ -98,8 +98,8 @@ func CreateMetricsList(c config.Module, logger log.Logger) ([]JSONMetric, error)
 				variableLabels = append(variableLabels, k)
 				variableLabelsValues = append(variableLabelsValues, v)
 			}
-			if metric.Regex != "" {
-				if re, err = regexp.Compile(metric.Regex); err != nil {
+			if metric.IncludeRegex != "" {
+				if re, err = regexp.Compile(metric.IncludeRegex); err != nil {
 					level.Error(logger).Log("msg", "invalid regex expression", "err", err)
 					continue
 				}
