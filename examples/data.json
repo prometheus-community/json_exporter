@@ -5,6 +5,7 @@
         {
             "id": "id-A",
             "count": 1,
+            "some_regex": "66%",
             "some_boolean": true,
             "state": "ACTIVE"
         },
@@ -17,6 +18,7 @@
         {
             "id": "id-C",
             "count": 3,
+            "some_regex": "1000 MB",
             "some_boolean": false,
             "state": "ACTIVE"
         }

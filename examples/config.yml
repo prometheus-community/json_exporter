@@ -30,6 +30,14 @@ modules:
         active: 1         # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+    - name: example_filtered_value
+      type: object
+      help: Example of sub-level filtered value scrapes from a json
+      path: '{.values[*].some_regex}'
+      labels:
+        environment: beta # static label
+        id: '{.id}'       # dynamic label
+      regex: ^\d*\.?\d*   # only match digits
 
   animals:
     metrics:
