@@ -38,6 +38,7 @@ modules:
         environment: beta # static label
       regex: ^\d*\.?\d*   # only match digits
 
+
   animals:
     metrics:
     - name: animal
