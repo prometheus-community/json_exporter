@@ -431,3 +431,40 @@ func TestBodyPostQuery(t *testing.T) {
 		target.Close()
 	}
 }
+func TestRegexResponse(t *testing.T) {
+	tests := []struct {
+		name          string
+		ConfigFile    string
+		ServeFile     string
+		ResponseFile  string
+		ShouldSucceed bool
+	}{
+		{"case1_testCorrectResponse", "../test/config/config.yml", "/serve/correctGot.json", "../test/response/expected.txt", true},
+		{"case2_testFailResponse", "../test/config/config.yml", "/serve/failGot.json", "../test/response/expected.txt", false},
+		{"case3_testInvalidRegex", "../test/config/invalidConfig.yml", "/serve/correctGot.json", "../test/response/expected.txt", false},
+		{"case4_testNullVaule", "../test/config/config.yml", "/serve/nullVaule.json", "../test/response/expected.txt", false},
+	}
+
+	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
+	defer target.Close()
+
+	for i, test := range tests {
+		c, err := config.LoadConfig(test.ConfigFile)
+		if err != nil {
+			t.Fatalf("Failed to load config file %s", test.ConfigFile)
+		}
+
+		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL+test.ServeFile, nil)
+		recorder := httptest.NewRecorder()
+		probeHandler(recorder, req, log.NewNopLogger(), c)
+
+		resp := recorder.Result()
+		body, _ := io.ReadAll(resp.Body)
+
+		expected, _ := os.ReadFile(test.ResponseFile)
+
+		if test.ShouldSucceed && cap(body) != cap(expected) {
+			t.Fatalf("Correct response validation test %d fails unexpectedly.\nGOT:\n%s\nEXPECTED:\n%s", i, body, expected)
+		}
+	}
+}
