@@ -96,7 +96,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					// When value starts by '0x', convert hex to decimal
 					if strings.HasPrefix(value, "0x") {
 						value = formatHex(value)
-						}
+					}
 
 					if floatValue, err := SanitizeValue(value); err == nil {
 						metric := prometheus.MustNewConstMetric(
