@@ -40,12 +40,19 @@ func MakeMetricName(parts ...string) string {
 func SanitizeValue(s string) (float64, error) {
 	var err error
 	var value float64
+	var hexValue int64
 	var resultErr string
 
 	if value, err = strconv.ParseFloat(s, 64); err == nil {
 		return value, nil
 	}
 	resultErr = fmt.Sprintf("%s", err)
+
+	// Check if value is an hex integer, e.g. 0x1d54c54 => 30755924
+	if hexValue, err = strconv.ParseInt(s, 16, 64); err == nil {
+		return float64(hexValue), nil
+	}
+	resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
 
 	if boolValue, err := strconv.ParseBool(s); err == nil {
 		if boolValue {
