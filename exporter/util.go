@@ -79,8 +79,11 @@ func SanitizeHexIntValue(s string) (int64, error) {
 	var value int64
 	var resultErr string
 
-	// Check if value is an hex integer, e.g. 0x1d54c54 => 30755924
-	if value, err = strconv.ParseInt(s, 16, 64); err == nil {
+ 	// remove 0x suffix if found in the input string
+ 	cleaned := strings.Replace(s, "0x", "", -1)
+	cleaned = strings.Replace(cleaned, "\"", "", -1)
+
+	if value, err = strconv.ParseInt(cleaned, 16, 64); err == nil {
 		return value, nil
 	}
 	resultErr = fmt.Sprintf("%s", err)
