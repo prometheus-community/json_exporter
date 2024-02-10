@@ -57,17 +57,27 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				continue
 			}
 
-			if floatValue, err := SanitizeValue(value); err == nil {
-				metric := prometheus.MustNewConstMetric(
+			floatValue, err := SanitizeValue(value)
+			if err == nil {
+				ch <- prometheus.MustNewConstMetric(
 					m.Desc,
 					m.ValueType,
 					floatValue,
 					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
 				)
-				ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
 			} else {
-				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
-				continue
+				intValue, err := SanitizeHexIntValue(value)
+				if err == nil {
+					ch <- prometheus.MustNewConstMetric(
+						m.Desc,
+						m.ValueType,
+						float64(intValue),
+						extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+					)
+				} else {
+					level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
+					continue
+				}
 			}
 
 		case config.ObjectScrape:
@@ -91,7 +101,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						continue
 					}
 
-					if floatValue, err := SanitizeValue(value); err == nil {
+					floatValue, err := SanitizeValue(value)
+					if err == nil {
 						metric := prometheus.MustNewConstMetric(
 							m.Desc,
 							m.ValueType,
@@ -100,8 +111,18 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						)
 						ch <- timestampMetric(mc.Logger, m, jdata, metric)
 					} else {
-						level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJSONPath, "value", value, "err", err, "metric", m.Desc)
-						continue
+						intValue, err := SanitizeHexIntValue(value)
+						if err == nil {
+							ch <- prometheus.MustNewConstMetric(
+								m.Desc,
+								m.ValueType,
+								float64(intValue),
+								extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+							)
+						} else {
+							level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.ValueJSONPath, "value", value, "err", err, "metric", m.Desc)
+							continue
+						}
 					}
 				}
 			} else {
