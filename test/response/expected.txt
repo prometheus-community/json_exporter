@@ -1,0 +1,3 @@
+# HELP available_memory Available memory in MB
+# TYPE available_memory gauge
+available_memory 5
