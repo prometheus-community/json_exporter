@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/alecthomas/kingpin/v2 v2.4.0
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/go-kit/log v0.2.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.45.0

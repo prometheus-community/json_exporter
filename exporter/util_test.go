@@ -35,6 +35,8 @@ func TestSanitizeValue(t *testing.T) {
 		{"[]", 0, false},
 		{"", 0, false},
 		{"''", 0, false},
+		{"Jan 1, 2000 0:00:00 AM", 946684800.0, true},
+		{"2000-01-01:00:00.000000000Z", 946684800.0, true},
 	}
 
 	for i, test := range tests {
