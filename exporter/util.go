@@ -107,6 +107,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 				LabelsJSONPaths:        variableLabelsValues,
 				ValueType:              valueType,
 				EpochTimestampJSONPath: metric.EpochTimestamp,
+				IgnoreMissingValues:    metric.IgnoreMissingValues,
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
@@ -130,6 +131,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					LabelsJSONPaths:        variableLabelsValues,
 					ValueType:              valueType,
 					EpochTimestampJSONPath: metric.EpochTimestamp,
+					IgnoreMissingValues:    metric.IgnoreMissingValues,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
