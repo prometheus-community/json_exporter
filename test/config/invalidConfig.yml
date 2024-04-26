@@ -1,0 +1,9 @@
+---
+modules:
+  default:
+    metrics:
+      - name: available_memory
+        path: '{.availableMemory}'
+        help: Available memory in MB
+        valuetype: gauge
+        includeregex: ^\d*\.?\d*)  # Invalid regular expression, parentheses do not match

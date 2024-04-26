@@ -24,6 +24,9 @@ $ curl "http://localhost:7979/probe?module=default&target=http://localhost:8000/
 # HELP example_global_value Example of a top-level global value scrape in the json
 # TYPE example_global_value untyped
 example_global_value{environment="beta",location="planet-mars"} 1234
+# HELP example_regex_value Example of a regex value scrapes in the json
+# TYPE example_regex_value gauge
+example_regex_value{environment="beta"} 1000
 # HELP example_timestamped_value_count Example of a timestamped value scrape in the json
 # TYPE example_timestamped_value_count untyped
 example_timestamped_value_count{environment="beta"} 2

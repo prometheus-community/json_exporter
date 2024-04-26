@@ -30,6 +30,14 @@ modules:
         active: 1         # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+    - name: example_regex_value
+      valuetype: gauge
+      help: Example of a regex value scrapes in the json
+      path: '{ .available_memory }'
+      labels:
+        environment: beta # static label
+      regex: ^\d*\.?\d*   # only match digits
+
 
   animals:
     metrics:
