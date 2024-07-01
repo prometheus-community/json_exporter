@@ -1,12 +1,11 @@
 go:
     # This must match .circle/config.yml.
-    version: 1.20
+    version: 1.22
 repository:
     path: github.com/prometheus-community/json_exporter
 build:
     binaries:
         - name: json_exporter
-    flags: -a -tags 'netgo static_build'
     ldflags: |
         -X github.com/prometheus/common/version.Version={{.Version}}
         -X github.com/prometheus/common/version.Revision={{.Revision}}
