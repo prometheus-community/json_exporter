@@ -74,6 +74,23 @@ func SanitizeIntValue(s string) (int64, error) {
 	return value, fmt.Errorf(resultErr)
 }
 
+func SanitizeHexIntValue(s string) (int64, error) {
+	var err error
+	var value int64
+	var resultErr string
+
+ 	// remove 0x suffix if found in the input string
+ 	cleaned := strings.Replace(s, "0x", "", -1)
+	cleaned = strings.Replace(cleaned, "\"", "", -1)
+
+	if value, err = strconv.ParseInt(cleaned, 16, 64); err == nil {
+		return value, nil
+	}
+	resultErr = fmt.Sprintf("%s", err)
+
+	return value, fmt.Errorf(resultErr)
+}
+
 func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 	var (
 		metrics   []JSONMetric
