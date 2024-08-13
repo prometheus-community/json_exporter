@@ -1,6 +1,7 @@
 ---
 modules:
   default:
+    valid_status_codes: [200, 201, 202, 800, 801, 802] # Example of custom status codes
     headers:
       X-Dummy: my-test-header
     metrics:
