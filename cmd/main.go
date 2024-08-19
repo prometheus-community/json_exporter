@@ -122,7 +122,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	registry := prometheus.NewPedanticRegistry()
 
-	metrics, err := exporter.CreateMetricsList(config.Modules[module])
+	metrics, err := exporter.CreateMetricsList(config.Modules[module], logger)
 	if err != nil {
 		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
 	}

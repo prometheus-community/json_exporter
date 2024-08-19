@@ -16,6 +16,8 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/go-kit/log"
@@ -39,6 +41,7 @@ type JSONMetric struct {
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
+	IncludeRegex           *regexp.Regexp
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -56,7 +59,12 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 				continue
 			}
-
+			if m.IncludeRegex != nil {
+				if value = m.IncludeRegex.FindString(value); value == "" {
+					level.Error(mc.Logger).Log("msg", fmt.Sprintf("No matching for this pattern '%s'", m.IncludeRegex.String()))
+					continue
+				}
+			}
 			if floatValue, err := SanitizeValue(value); err == nil {
 				metric := prometheus.MustNewConstMetric(
 					m.Desc,
