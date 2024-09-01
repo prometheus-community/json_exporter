@@ -1,6 +1,7 @@
 module github.com/prometheus-community/json_exporter
 
 go 1.21
+toolchain go1.22.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -10,7 +11,7 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/exporter-toolkit v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/client-go v0.28.3
+	k8s.io/client-go v0.31.0
 )
 
 require (
@@ -21,7 +22,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
