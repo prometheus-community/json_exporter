@@ -43,6 +43,37 @@ modules:
       values:
         population: '{ .population }'
 
+  transform:
+    metrics:
+    - name: origin
+      transformations:
+        - type: jq
+          query: |-
+            .result[] | .name as $poolName | .id as $poolId | .origins[] | (  .name as $name | .healthy as $endpointHealth | {endpointName: $name, endpointHealthy: .healthy, poolName: $poolName, address:.address, poolId:$poolId, address:.address} )
+      help: Health of each origin in the pool
+      path: '{ [*] }'
+      type: object
+      labels:
+        pool_id: '{.poolId}'
+        pool_name: '{.poolName}'
+        address: '{.address}'
+        endpoint_name: '{.endpointName}'
+      values:
+        health: '{.endpointHealthy}'  # Extract only the `healthy` field
+
+
+    - name: pool
+      type: object
+      help: Health of the pools
+      path: '{.result[*]}'
+      labels:
+        pool_name: '{.name}'
+        pool_id: '{.id}'
+      values:
+        health: '{.healthy}'
+
+
+
     ## HTTP connection configurations can be set in 'modules.<module_name>.http_client_config' field. For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
     #
     # http_client_config:

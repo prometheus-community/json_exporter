@@ -1,0 +1,45 @@
+{
+  "result": [
+    {
+      "name": "pool1",
+      "id": "1",
+      "healthy": true,
+      "origins": [
+        {
+          "name": "origin1",
+          "address": "127.0.0.1",
+          "healthy": true
+        },
+        {
+          "name": "origin2",
+          "address": "192.168.1.1",
+          "healthy": false
+        }
+      ]
+    },
+    {
+      "name": "pool2",
+      "id": "2",
+      "healthy": true,
+      "origins": [
+        {
+          "name": "origin3",
+          "address": "10.0.0.1",
+          "healthy": true
+        }
+      ]
+    },
+    {
+      "name": "pool3",
+      "id": "3",
+      "healthy": false,
+      "origins": [
+        {
+          "name": "origin4",
+          "address": "10.0.0.1",
+          "healthy": false
+        }
+      ]
+    }
+  ]
+}

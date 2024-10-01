@@ -32,3 +32,18 @@ scrape_configs:
       ## Location of the json exporter's real <hostname>:<port>
       replacement: host.docker.internal:7979 # equivalent to "localhost:7979"
 
+## Gather metrics from transform-data JSON source using the 'transform' module
+- job_name: json_transform
+  metrics_path: /probe
+  params:
+    module: [transform]  # Use the 'transform' module
+  static_configs:
+    - targets:
+        - http://localhost:8000/examples/transform-data.json
+  relabel_configs:
+    - source_labels: [__address__]
+      target_label: __param_target
+    - source_labels: [__param_target]
+      target_label: instance
+    - target_label: __address__
+      replacement: host.docker.internal:7979  # json_exporter instance

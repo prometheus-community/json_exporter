@@ -50,6 +50,20 @@ animal_population{name="deer",predator="false"} 456
 animal_population{name="lion",predator="true"} 123
 animal_population{name="pigeon",predator="false"} 789
 
+## Test transform module
+$ curl "http://localhost:7979/probe?module=transform&target=http://localhost:8000/examples/transform-data.json"
+
+# HELP origin_health Health of each origin in the pool
+# TYPE origin_health untyped
+origin_health{address="10.0.0.1",endpoint_name="origin3",pool_id="2",pool_name="pool2"} 1
+origin_health{address="10.0.0.1",endpoint_name="origin4",pool_id="3",pool_name="pool3"} 0
+origin_health{address="127.0.0.1",endpoint_name="origin1",pool_id="1",pool_name="pool1"} 1
+origin_health{address="192.168.1.1",endpoint_name="origin2",pool_id="1",pool_name="pool1"} 0
+# HELP pool_health Health of the pools
+# TYPE pool_health untyped
+pool_health{pool_id="1",pool_name="pool1"} 1
+pool_health{pool_id="2",pool_name="pool2"} 1
+pool_health{pool_id="3",pool_name="pool3"} 0
 
 ## TEST through prometheus:
 
