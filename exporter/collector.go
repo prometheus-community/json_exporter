@@ -16,6 +16,7 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/prometheus-community/json_exporter/transformers"
 	"time"
 
 	"github.com/go-kit/log"
@@ -39,6 +40,7 @@ type JSONMetric struct {
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
+	Transformers           []transformers.Transformer
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -49,11 +51,22 @@ func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JSONMetrics {
+
+		jsonData := mc.Data
+		for _, transformer := range m.Transformers {
+			transformedData, err := transformer.Transform(jsonData)
+			if err != nil {
+				level.Error(mc.Logger).Log("msg", "Transformation failed", "err", err)
+				continue
+			}
+			jsonData = transformedData
+		}
+
 		switch m.Type {
 		case config.ValueScrape:
-			value, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false)
+			value, err := extractValue(mc.Logger, jsonData, m.KeyJSONPath, false)
 			if err != nil {
-				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
+				level.Error(mc.Logger).Log("msg", "Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc, "data", jsonData)
 				continue
 			}
 
@@ -62,16 +75,17 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					m.Desc,
 					m.ValueType,
 					floatValue,
-					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+					extractLabels(mc.Logger, jsonData, m.LabelsJSONPaths)...,
 				)
-				ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
+				ch <- timestampMetric(mc.Logger, m, jsonData, metric)
 			} else {
-				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
+				level.Error(mc.Logger).Log("msg", "Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc) //  was getting error here!
 				continue
 			}
 
 		case config.ObjectScrape:
-			values, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true)
+			values, err := extractValue(mc.Logger, jsonData, m.KeyJSONPath, true)
+
 			if err != nil {
 				level.Error(mc.Logger).Log("msg", "Failed to extract json objects for metric", "err", err, "metric", m.Desc)
 				continue
