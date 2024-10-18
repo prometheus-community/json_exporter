@@ -17,18 +17,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus-community/json_exporter/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -46,28 +45,28 @@ var (
 
 func Run() {
 
-	promlogConfig := &promlog.Config{}
+	promslogConfig := &promslog.Config{}
 
-	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.Version(version.Print("json_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-	logger := promlog.New(promlogConfig)
+	logger := promslog.New(promslogConfig)
 
-	level.Info(logger).Log("msg", "Starting json_exporter", "version", version.Info())
-	level.Info(logger).Log("msg", "Build context", "build", version.BuildContext())
+	logger.Info("Starting json_exporter", "version", version.Info())
+	logger.Info("Build context", "build", version.BuildContext())
 
-	level.Info(logger).Log("msg", "Loading config file", "file", *configFile)
+	logger.Info("Loading config file", "file", *configFile)
 	config, err := config.LoadConfig(*configFile)
 	if err != nil {
-		level.Error(logger).Log("msg", "Error loading config", "err", err)
+		logger.Error("Error loading config", "err", err)
 		os.Exit(1)
 	}
 	configJSON, err := json.Marshal(config)
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to marshal config to JSON", "err", err)
+		logger.Error("Failed to marshal config to JSON", "err", err)
 	}
-	level.Info(logger).Log("msg", "Loaded config file", "config", string(configJSON))
+	logger.Info("Loaded config file", "config", string(configJSON))
 
 	if *configCheck {
 		os.Exit(0)
@@ -91,7 +90,7 @@ func Run() {
 		}
 		landingPage, err := web.NewLandingPage(landingConfig)
 		if err != nil {
-			level.Error(logger).Log("err", err)
+			logger.Error("error creating landing page", "err", err)
 			os.Exit(1)
 		}
 		http.Handle("/", landingPage)
@@ -99,12 +98,12 @@ func Run() {
 
 	server := &http.Server{}
 	if err := web.ListenAndServe(server, toolkitFlags, logger); err != nil {
-		level.Error(logger).Log("msg", "Failed to start the server", "err", err)
+		logger.Error("Failed to start the server", "err", err)
 		os.Exit(1)
 	}
 }
 
-func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, config config.Config) {
+func probeHandler(w http.ResponseWriter, r *http.Request, logger *slog.Logger, config config.Config) {
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -116,7 +115,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 	}
 	if _, ok := config.Modules[module]; !ok {
 		http.Error(w, fmt.Sprintf("Unknown module %q", module), http.StatusBadRequest)
-		level.Debug(logger).Log("msg", "Unknown module", "module", module)
+		logger.Debug("Unknown module", "module", module)
 		return
 	}
 
@@ -124,7 +123,7 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger log.Logger, con
 
 	metrics, err := exporter.CreateMetricsList(config.Modules[module])
 	if err != nil {
-		level.Error(logger).Log("msg", "Failed to create metrics list from config", "err", err)
+		logger.Error("Failed to create metrics list from config", "err", err)
 	}
 
 	jsonMetricCollector := exporter.JSONMetricCollector{JSONMetrics: metrics}

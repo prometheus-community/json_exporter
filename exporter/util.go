@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -26,8 +27,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
@@ -58,7 +57,7 @@ func SanitizeValue(s string) (float64, error) {
 	if s == "<nil>" {
 		return math.NaN(), nil
 	}
-	return value, fmt.Errorf(resultErr)
+	return value, errors.New(resultErr)
 }
 
 func SanitizeIntValue(s string) (int64, error) {
@@ -71,7 +70,7 @@ func SanitizeIntValue(s string) (int64, error) {
 	}
 	resultErr = fmt.Sprintf("%s", err)
 
-	return value, fmt.Errorf(resultErr)
+	return value, errors.New(resultErr)
 }
 
 func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
@@ -143,12 +142,12 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 type JSONFetcher struct {
 	module config.Module
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	method string
 	body   io.Reader
 }
 
-func NewJSONFetcher(ctx context.Context, logger log.Logger, m config.Module, tplValues url.Values) *JSONFetcher {
+func NewJSONFetcher(ctx context.Context, logger *slog.Logger, m config.Module, tplValues url.Values) *JSONFetcher {
 	method, body := renderBody(logger, m.Body, tplValues)
 	return &JSONFetcher{
 		module: m,
@@ -163,7 +162,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	httpClientConfig := f.module.HTTPClientConfig
 	client, err := pconfig.NewClientFromConfig(httpClientConfig, "fetch_json", pconfig.WithKeepAlivesDisabled(), pconfig.WithHTTP2Disabled())
 	if err != nil {
-		level.Error(f.logger).Log("msg", "Error generating HTTP client", "err", err)
+		f.logger.Error("Error generating HTTP client", "err", err)
 		return nil, err
 	}
 
@@ -171,7 +170,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	req, err = http.NewRequest(f.method, endpoint, f.body)
 	req = req.WithContext(f.ctx)
 	if err != nil {
-		level.Error(f.logger).Log("msg", "Failed to create request", "err", err)
+		f.logger.Error("Failed to create request", "err", err)
 		return nil, err
 	}
 
@@ -188,7 +187,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 
 	defer func() {
 		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
-			level.Error(f.logger).Log("msg", "Failed to discard body", "err", err)
+			f.logger.Error("Failed to discard body", "err", err)
 		}
 		resp.Body.Close()
 	}()
@@ -219,7 +218,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 // Use the configured template to render the body if enabled
 // Do not treat template errors as fatal, on such errors just log them
 // and continue with static body content
-func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (method string, br io.Reader) {
+func renderBody(logger *slog.Logger, body config.Body, tplValues url.Values) (method string, br io.Reader) {
 	method = "POST"
 	if body.Content == "" {
 		return "GET", nil
@@ -228,16 +227,16 @@ func renderBody(logger log.Logger, body config.Body, tplValues url.Values) (meth
 	if body.Templatize {
 		tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(body.Content)
 		if err != nil {
-			level.Error(logger).Log("msg", "Failed to create a new template from body content", "err", err, "content", body.Content)
+			logger.Error("Failed to create a new template from body content", "err", err, "content", body.Content)
 			return
 		}
 		tpl = tpl.Option("missingkey=zero")
 		var b strings.Builder
 		if err := tpl.Execute(&b, tplValues); err != nil {
-			level.Error(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content)
+			logger.Error("Failed to render template with values", "err", err, "tempalte", body.Content)
 
 			// `tplValues` can contain sensitive values, so log it only when in debug mode
-			level.Debug(logger).Log("msg", "Failed to render template with values", "err", err, "tempalte", body.Content, "values", tplValues, "rendered_body", b.String())
+			logger.Debug("Failed to render template with values", "err", err, "tempalte", body.Content, "values", tplValues, "rendered_body", b.String())
 			return
 		}
 		br = strings.NewReader(b.String())

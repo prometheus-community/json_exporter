@@ -22,9 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus-community/json_exporter/config"
 	pconfig "github.com/prometheus/common/config"
+	"github.com/prometheus/common/promslog"
 )
 
 func TestFailIfSelfSignedCA(t *testing.T) {
@@ -34,7 +34,7 @@ func TestFailIfSelfSignedCA(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -61,7 +61,7 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), c)
+	probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -78,7 +78,7 @@ func TestDefaultModule(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo"+"?target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
 	if resp.StatusCode != http.StatusOK {
@@ -87,7 +87,7 @@ func TestDefaultModule(t *testing.T) {
 
 	// Module doesn't exist.
 	recorder = httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"foo": {}}})
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{Modules: map[string]config.Module{"foo": {}}})
 	resp = recorder.Result()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("Default module test fails unexpectedly, expected 400, got %d", resp.StatusCode)
@@ -97,7 +97,7 @@ func TestDefaultModule(t *testing.T) {
 func TestFailIfTargetMissing(t *testing.T) {
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{})
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{})
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -119,7 +119,7 @@ func TestDefaultAcceptHeader(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
 	recorder := httptest.NewRecorder()
-	probeHandler(recorder, req, log.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -151,7 +151,7 @@ func TestCorrectResponse(t *testing.T) {
 
 		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL+test.ServeFile, nil)
 		recorder := httptest.NewRecorder()
-		probeHandler(recorder, req, log.NewNopLogger(), c)
+		probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 		resp := recorder.Result()
 		body, _ := io.ReadAll(resp.Body)
@@ -191,7 +191,7 @@ func TestBasicAuth(t *testing.T) {
 		},
 	}
 
-	probeHandler(recorder, req, log.NewNopLogger(), c)
+	probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -222,7 +222,7 @@ func TestBearerToken(t *testing.T) {
 		}},
 	}
 
-	probeHandler(recorder, req, log.NewNopLogger(), c)
+	probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -258,7 +258,7 @@ func TestHTTPHeaders(t *testing.T) {
 		},
 	}
 
-	probeHandler(recorder, req, log.NewNopLogger(), c)
+	probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 	resp := recorder.Result()
 	body, _ := io.ReadAll(resp.Body)
@@ -321,7 +321,7 @@ func TestBodyPostTemplate(t *testing.T) {
 			},
 		}
 
-		probeHandler(recorder, req, log.NewNopLogger(), c)
+		probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 		resp := recorder.Result()
 		respBody, _ := io.ReadAll(resp.Body)
@@ -420,7 +420,7 @@ func TestBodyPostQuery(t *testing.T) {
 			},
 		}
 
-		probeHandler(recorder, req, log.NewNopLogger(), c)
+		probeHandler(recorder, req, promslog.NewNopLogger(), c)
 
 		resp := recorder.Result()
 		respBody, _ := io.ReadAll(resp.Body)
