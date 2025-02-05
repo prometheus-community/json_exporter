@@ -1,3 +1,7 @@
+## 0.7.0 / 2025-02-05
+
+* [CHANGE] adopt slog, drop go-kit/log #334
+
 ## 0.6.0 / 2023-06-06
 
 * [FEATURE] Allow timestamps from metrics #167
