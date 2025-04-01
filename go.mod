@@ -2,10 +2,12 @@ module github.com/prometheus-community/json_exporter
 
 go 1.22.0
 
+toolchain go1.24.1
+
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/common v0.62.0
 	github.com/prometheus/exporter-toolkit v0.13.2
 	gopkg.in/yaml.v2 v2.4.0
