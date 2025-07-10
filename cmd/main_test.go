@@ -189,7 +189,9 @@ func TestIgnoreMissingValues(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module="+test.Module+"&target="+target.URL+test.ServeFile, nil)
 		recorder := httptest.NewRecorder()
 		logBuffer := strings.Builder{}
-		probeHandler(recorder, req, log.NewLogfmtLogger(&logBuffer), c)
+		var logWriter io.Writer = &logBuffer
+		promslogConfig := &promslog.Config{Writer: logWriter}
+		probeHandler(recorder, req, promslog.New(promslogConfig), c)
 
 		if test.ShouldSucceed && logBuffer.Len() > 0 {
 			t.Fatalf("Ignore missing values test %d (module: %s) fails unexpectedly.\nLOG:\n%s", i, test.Module, logBuffer.String())
