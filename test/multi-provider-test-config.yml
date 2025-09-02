@@ -1,0 +1,36 @@
+---
+modules:
+  multi_provider_test:
+    metrics:
+    # DNS Providers
+    - name: dns_provider_status
+      type: object
+      help: DNS provider account status (1=ok, 0=failed)
+      path: '{ .dns_providers[*] }'
+      labels:
+        provider_name: '{__name__}'
+        service_type: 'dns'
+      values:
+        status: '{.ok}'
+        
+    # SSL Providers
+    - name: ssl_provider_status
+      type: object
+      help: SSL provider account status (1=ok, 0=failed)
+      path: '{ .ssl_providers[*] }'
+      labels:
+        provider_name: '{__name__}'
+        service_type: 'ssl'
+      values:
+        status: '{.ok}'
+        
+    # Cloud Providers
+    - name: cloud_provider_status
+      type: object
+      help: Cloud provider account status (1=ok, 0=failed)
+      path: '{ .cloud_providers[*] }'
+      labels:
+        provider_name: '{__name__}'
+        service_type: 'cloud'
+      values:
+        status: '{.ok}'

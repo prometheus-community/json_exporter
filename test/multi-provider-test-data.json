@@ -1,0 +1,57 @@
+{
+  "dns_providers": [
+    {
+      "provider-alpha": {
+        "ok": true,
+        "error": null,
+        "href": "/admin/provider/123/"
+      }
+    },
+    {
+      "provider-beta": {
+        "ok": true,
+        "error": null,
+        "href": "/admin/provider/456/"
+      }
+    },
+    {
+      "provider-gamma": {
+        "ok": false,
+        "error": "Authentication failed: Invalid API credentials",
+        "href": "/admin/provider/789/"
+      }
+    }
+  ],
+  "ssl_providers": [
+    {
+      "ssl-service-east": {
+        "ok": true,
+        "error": null,
+        "href": "/admin/ssl/111/"
+      }
+    },
+    {
+      "ssl-service-west": {
+        "ok": false,
+        "error": "Rate limit exceeded for API calls",
+        "href": "/admin/ssl/222/"
+      }
+    }
+  ],
+  "cloud_providers": [
+    {
+      "cloud-platform-primary": {
+        "ok": true,
+        "error": null,
+        "href": "/admin/cloud/333/"
+      }
+    },
+    {
+      "cloud-platform-backup": {
+        "ok": false,
+        "error": "Connection timeout to management API",
+        "href": "/admin/cloud/444/"
+      }
+    }
+  ]
+}
