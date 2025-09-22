@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"time"
+	"fmt"
+	"strings"
 
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
@@ -48,6 +50,7 @@ func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JSONMetrics {
+		seen := make(map[string]struct{})
 		switch m.Type {
 		case config.ValueScrape:
 			value, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false)
@@ -91,11 +94,18 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					}
 
 					if floatValue, err := SanitizeValue(value); err == nil {
+						labels := extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)
+						labelKey := strings.Join(labels, "\x00")
+						if _, exists := seen[labelKey]; exists {
+							mc.Logger.Warn("Skipping duplicate metric with identical labels", "metric", m.Desc, "labels", fmt.Sprintf("%v", labels))
+							continue
+						}
+						seen[labelKey] = struct{}{}
 						metric := prometheus.MustNewConstMetric(
 							m.Desc,
 							m.ValueType,
 							floatValue,
-							extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)...,
+							labels...,
 						)
 						ch <- timestampMetric(mc.Logger, m, jdata, metric)
 					} else {
