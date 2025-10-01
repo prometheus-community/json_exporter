@@ -16,10 +16,10 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
-	"log/slog"
-	"time"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
