@@ -27,6 +27,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/araddon/dateparse"
 	"github.com/prometheus-community/json_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	pconfig "github.com/prometheus/common/config"
@@ -51,6 +52,11 @@ func SanitizeValue(s string) (float64, error) {
 			return 1.0, nil
 		}
 		return 0.0, nil
+	}
+	resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
+
+	if t, err := dateparse.ParseAny(s); err == nil {
+		return float64(t.Unix()), nil
 	}
 	resultErr = resultErr + "; " + fmt.Sprintf("%s", err)
 
