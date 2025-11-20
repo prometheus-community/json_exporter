@@ -133,7 +133,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 				metrics = append(metrics, jsonMetric)
 			}
 		default:
-			return nil, fmt.Errorf("Unknown metric type: '%s', for metric: '%s'", metric.Type, metric.Name)
+			return nil, fmt.Errorf("unknown metric type: '%s', for metric: '%s'", metric.Type, metric.Name)
 		}
 	}
 	return metrics, nil
