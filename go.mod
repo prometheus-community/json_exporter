@@ -1,6 +1,6 @@
 module github.com/prometheus-community/json_exporter
 
-go 1.22.0
+go 1.24.0
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0

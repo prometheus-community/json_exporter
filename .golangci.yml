@@ -1,20 +1,27 @@
+version: "2"
 linters:
   enable:
     - revive
     - sloglint
-
-issues:
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - errcheck
-
-linters-settings:
-  errcheck:
-    exclude-functions:
-      # Used in HTTP handlers, any error is handled by the server itself.
-      - (net/http.ResponseWriter).Write
-  revive:
+  settings:
+    errcheck:
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: unused-parameter
-        disabled: true
+      - linters:
+          - errcheck
+        path: _test.go
+formatters:
+  exclusions:
+    generated: lax
