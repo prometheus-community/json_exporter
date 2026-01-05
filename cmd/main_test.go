@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/prometheus-community/json_exporter/config"
 	pconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/promslog"
@@ -160,6 +161,43 @@ func TestCorrectResponse(t *testing.T) {
 
 		if test.ShouldSucceed && string(body) != string(expected) {
 			t.Fatalf("Correct response validation test %d fails unexpectedly.\nGOT:\n%s\nEXPECTED:\n%s", i, body, expected)
+		}
+	}
+}
+
+func TestIgnoreMissingValues(t *testing.T) {
+	tests := []struct {
+		ConfigFile    string
+		ServeFile     string
+		Module        string
+		ShouldSucceed bool
+	}{
+		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_value_ok", true},
+		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_value_not_ok", false},
+		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_object_value_ok", true},
+		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_object_value_not_ok", false},
+	}
+
+	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
+	defer target.Close()
+
+	for i, test := range tests {
+		c, err := config.LoadConfig(test.ConfigFile)
+		if err != nil {
+			t.Fatalf("Failed to load config file %s", test.ConfigFile)
+		}
+
+		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module="+test.Module+"&target="+target.URL+test.ServeFile, nil)
+		recorder := httptest.NewRecorder()
+		logBuffer := strings.Builder{}
+		probeHandler(recorder, req, log.NewLogfmtLogger(&logBuffer), c)
+
+		if test.ShouldSucceed && logBuffer.Len() > 0 {
+			t.Fatalf("Ignore missing values test %d (module: %s) fails unexpectedly.\nLOG:\n%s", i, test.Module, logBuffer.String())
+		}
+
+		if !test.ShouldSucceed && logBuffer.Len() == 0 {
+			t.Fatalf("Ignore missing values test %d (module: %s) succeeded unexpectedly.", i, test.Module)
 		}
 	}
 }

@@ -1,0 +1,29 @@
+---
+modules:
+  missing_value_ok:
+    metrics:
+      - name: example_global_value_missing
+        ignore_missing_values: true
+        path: "{ .missing_value }"
+
+  missing_value_not_ok:
+    metrics:
+      - name: example_global_value_missing
+        path: "{ .missing_value }"
+
+  missing_object_value_ok:
+    metrics:
+      - name: example_value_in_object_missing
+        type: object
+        ignore_missing_values: true
+        path: "{.values[0]}"
+        values:
+          missing_value: "{ .missing_value }"
+
+  missing_object_value_not_ok:
+    metrics:
+      - name: example_value_in_object_missing
+        type: object
+        path: "{.values[0]}"
+        values:
+          missing_value: "{ .missing_value }"

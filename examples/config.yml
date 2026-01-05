@@ -30,6 +30,13 @@ modules:
         active: 1         # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+    - name: example_missing_value
+      path: '{ .missing_value }'
+      ignore_missing_values: true
+      help: >-
+        Example of ignoring a missing value.
+        This metric will not be reported if the path .missing_value is not
+        present, and an error message will not be generated.
 
   animals:
     metrics:
