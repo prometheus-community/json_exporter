@@ -38,6 +38,7 @@ type JSONMetric struct {
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
+	IgnoreMissingValues    bool
 }
 
 func (mc JSONMetricCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -50,9 +51,13 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JSONMetrics {
 		switch m.Type {
 		case config.ValueScrape:
-			value, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false)
+			value, missing, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false, m.IgnoreMissingValues)
 			if err != nil {
 				mc.Logger.Error("Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
+				continue
+			}
+
+			if missing {
 				continue
 			}
 
@@ -70,9 +75,13 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 
 		case config.ObjectScrape:
-			values, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true)
+			values, missing, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true, m.IgnoreMissingValues)
 			if err != nil {
 				mc.Logger.Error("Failed to extract json objects for metric", "err", err, "metric", m.Desc)
+				continue
+			}
+
+			if missing {
 				continue
 			}
 
@@ -84,9 +93,13 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						mc.Logger.Error("Failed to marshal data to json", "path", m.ValueJSONPath, "err", err, "metric", m.Desc, "data", data)
 						continue
 					}
-					value, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false)
+					value, missing, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false, m.IgnoreMissingValues)
 					if err != nil {
 						mc.Logger.Error("Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
+						continue
+					}
+
+					if missing {
 						continue
 					}
 
@@ -114,8 +127,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-// Returns the last matching value at the given json path
-func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutput bool) (string, error) {
+// Returns the last matching value at the given json path and a flag if the path was missing
+func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutput bool, ignoreMissingValues bool) (string, bool, error) {
 	var jsonData interface{}
 	buf := new(bytes.Buffer)
 
@@ -124,34 +137,42 @@ func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutpu
 		j.EnableJSONOutput(true)
 	}
 
+	if ignoreMissingValues {
+		j.AllowMissingKeys(true)
+	}
+
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		logger.Error("Failed to unmarshal data to json", "err", err, "data", data)
-		return "", err
+		return "", false, err
 	}
 
 	if err := j.Parse(path); err != nil {
 		logger.Error("Failed to parse jsonpath", "err", err, "path", path, "data", data)
-		return "", err
+		return "", false, err
 	}
 
 	if err := j.Execute(buf, jsonData); err != nil {
 		logger.Error("Failed to execute jsonpath", "err", err, "path", path, "data", data)
-		return "", err
+		return "", false, err
+	}
+
+	if buf.Len() == 0 && ignoreMissingValues {
+		return "", true, nil
 	}
 
 	// Since we are finally going to extract only float64, unquote if necessary
 	if res, err := jsonpath.UnquoteExtend(buf.String()); err == nil {
-		return res, nil
+		return res, false, nil
 	}
 
-	return buf.String(), nil
+	return buf.String(), false, nil
 }
 
 // Returns the list of labels created from the list of provided json paths
 func extractLabels(logger *slog.Logger, data []byte, paths []string) []string {
 	labels := make([]string, len(paths))
 	for i, path := range paths {
-		if result, err := extractValue(logger, data, path, false); err == nil {
+		if result, _, err := extractValue(logger, data, path, false, false); err == nil {
 			labels[i] = result
 		} else {
 			logger.Error("Failed to extract label value", "err", err, "path", path, "data", data)
@@ -164,11 +185,16 @@ func timestampMetric(logger *slog.Logger, m JSONMetric, data []byte, pm promethe
 	if m.EpochTimestampJSONPath == "" {
 		return pm
 	}
-	ts, err := extractValue(logger, data, m.EpochTimestampJSONPath, false)
+	ts, missing, err := extractValue(logger, data, m.EpochTimestampJSONPath, false, m.IgnoreMissingValues)
 	if err != nil {
 		logger.Error("Failed to extract timestamp for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 		return pm
 	}
+
+	if missing {
+		return pm
+	}
+
 	epochTime, err := SanitizeIntValue(ts)
 	if err != nil {
 		logger.Error("Failed to parse timestamp for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
