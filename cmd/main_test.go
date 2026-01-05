@@ -22,7 +22,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus-community/json_exporter/config"
 	pconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/promslog"
@@ -190,7 +189,9 @@ func TestIgnoreMissingValues(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://example.com/foo"+"?module="+test.Module+"&target="+target.URL+test.ServeFile, nil)
 		recorder := httptest.NewRecorder()
 		logBuffer := strings.Builder{}
-		probeHandler(recorder, req, log.NewLogfmtLogger(&logBuffer), c)
+		promslogConfig := &promslog.Config{Writer: &logBuffer}
+		logger := promslog.New(promslogConfig)
+		probeHandler(recorder, req, logger, c)
 
 		if test.ShouldSucceed && logBuffer.Len() > 0 {
 			t.Fatalf("Ignore missing values test %d (module: %s) fails unexpectedly.\nLOG:\n%s", i, test.Module, logBuffer.String())
