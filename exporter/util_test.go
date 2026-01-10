@@ -14,7 +14,9 @@
 package exporter
 
 import (
+	"log/slog"
 	"math"
+	"os"
 	"testing"
 )
 
@@ -55,5 +57,76 @@ func TestSanitizeValueNaN(t *testing.T) {
 	}
 	if !math.IsNaN(actualOutput) {
 		t.Fatalf("Value sanitization test for %f fails unexpectedly.", math.NaN())
+	}
+}
+
+func TestExtractDynamicLabels(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	tests := []struct {
+		name     string
+		data     interface{}
+		paths    []string
+		expected []string
+	}{
+		{
+			name: "Extract object key as label",
+			data: map[string]interface{}{
+				"Yokoy Expenses -> HiBob": map[string]interface{}{
+					"ok":    true,
+					"error": "Number of failing accounts in the last sync (valid and synced): 0",
+				},
+			},
+			paths:    []string{"{__name__}"},
+			expected: []string{"Yokoy Expenses -> HiBob"},
+		},
+		{
+			name: "Extract multiple labels with object key",
+			data: map[string]interface{}{
+				"LDAP-AVIFORS -> Yokoy": map[string]interface{}{
+					"ok":    false,
+					"error": "Connection timeout",
+				},
+			},
+			paths:    []string{"{__name__}", "{.ok}"},
+			expected: []string{"LDAP-AVIFORS -> Yokoy", "false"},
+		},
+		{
+			name: "Regular JSONPath extraction without dynamic keys",
+			data: map[string]interface{}{
+				"status": "active",
+				"count":  42,
+			},
+			paths:    []string{"{.status}"},
+			expected: []string{"active"},
+		},
+		{
+			name: "Extract boolean from dynamic object",
+			data: map[string]interface{}{
+				"Test Flow -> Failed": map[string]interface{}{
+					"ok":    false,
+					"error": "Connection timeout occurred",
+				},
+			},
+			paths:    []string{"{__name__}", "{.ok}"},
+			expected: []string{"Test Flow -> Failed", "false"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractDynamicLabels(logger, tt.data, tt.paths)
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("Expected %d labels, got %d", len(tt.expected), len(result))
+				return
+			}
+
+			for i, expected := range tt.expected {
+				if result[i] != expected {
+					t.Errorf("Expected label[%d] = '%s', got '%s'", i, expected, result[i])
+				}
+			}
+		})
 	}
 }

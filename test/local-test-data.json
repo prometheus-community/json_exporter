@@ -1,0 +1,22 @@
+{
+  "flows": [
+    {
+      "Service-A -> Service-B": {
+        "ok": true,
+        "error": "No errors detected in synchronization process"
+      }
+    },
+    {
+      "Auth-System -> User-Management": {
+        "ok": true,
+        "error": "All accounts synchronized successfully"
+      }
+    },
+    {
+      "Payment-Service -> External-Gateway": {
+        "ok": false,
+        "error": "Connection timeout occurred during sync"
+      }
+    }
+  ]
+}

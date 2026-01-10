@@ -1,0 +1,12 @@
+---
+modules:
+  test_flows:
+    metrics:
+    - name: flow_status
+      type: object
+      help: Flow status monitoring (1=ok, 0=failed)
+      path: '{ .flows[*] }'
+      labels:
+        flow_name: '{__name__}'  # Extract dynamic object key as label
+      values:
+        status: '{.ok}'  # Boolean converted to 1/0

@@ -16,6 +16,7 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -84,7 +85,11 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						mc.Logger.Error("Failed to marshal data to json", "path", m.ValueJSONPath, "err", err, "metric", m.Desc, "data", data)
 						continue
 					}
-					value, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false)
+
+					// Use dynamic label extraction to support object keys as labels
+					dynamicLabels := extractDynamicLabels(mc.Logger, data, m.LabelsJSONPaths)
+
+					value, err := extractDynamicValue(mc.Logger, data, m.ValueJSONPath)
 					if err != nil {
 						mc.Logger.Error("Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
@@ -95,7 +100,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 							m.Desc,
 							m.ValueType,
 							floatValue,
-							extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)...,
+							dynamicLabels...,
 						)
 						ch <- timestampMetric(mc.Logger, m, jdata, metric)
 					} else {
@@ -158,6 +163,85 @@ func extractLabels(logger *slog.Logger, data []byte, paths []string) []string {
 		}
 	}
 	return labels
+}
+
+// extractDynamicLabels handles extraction of labels including dynamic object keys
+func extractDynamicLabels(logger *slog.Logger, data interface{}, paths []string) []string {
+	labels := make([]string, len(paths))
+	for i, path := range paths {
+		if path == "{__name__}" {
+			// Special path to extract object key as label
+			if objMap, ok := data.(map[string]interface{}); ok {
+				for key := range objMap {
+					labels[i] = key
+					break // Take the first key as label
+				}
+			}
+		} else {
+			// Try to extract from original data first (for regular objects)
+			jdata, err := json.Marshal(data)
+			if err != nil {
+				logger.Error("Failed to marshal data for label extraction", "err", err, "data", data)
+				continue
+			}
+
+			if result, err := extractValue(logger, jdata, path, false); err == nil {
+				labels[i] = result
+			} else {
+				// If that fails and this is a dynamic object, try extracting from nested values
+				if objMap, ok := data.(map[string]interface{}); ok {
+					found := false
+					for _, value := range objMap {
+						nestedData, err := json.Marshal(value)
+						if err != nil {
+							continue
+						}
+						if result, err := extractValue(logger, nestedData, path, false); err == nil {
+							labels[i] = result
+							found = true
+							break
+						}
+					}
+					if !found {
+						logger.Error("Failed to extract label value from any nested object", "path", path, "data", data)
+					}
+				} else {
+					logger.Error("Failed to extract label value", "err", err, "path", path, "data", data)
+				}
+			}
+		}
+	}
+	return labels
+}
+
+// extractDynamicValue handles extraction of values from dynamic objects
+func extractDynamicValue(logger *slog.Logger, data interface{}, path string) (string, error) {
+	// Try to extract from original data first (for regular objects)
+	jdata, err := json.Marshal(data)
+	if err != nil {
+		logger.Error("Failed to marshal data for value extraction", "err", err, "data", data)
+		return "", err
+	}
+
+	if result, err := extractValue(logger, jdata, path, false); err == nil {
+		return result, nil
+	}
+
+	// If that fails and this is a dynamic object, try extracting from nested values
+	if objMap, ok := data.(map[string]interface{}); ok {
+		for _, value := range objMap {
+			nestedData, err := json.Marshal(value)
+			if err != nil {
+				continue
+			}
+			if result, err := extractValue(logger, nestedData, path, false); err == nil {
+				return result, nil
+			}
+		}
+		return "", fmt.Errorf("value not found in any nested object for path: %s", path)
+	}
+
+	return "", fmt.Errorf("value not found for path: %s", path)
 }
 
 func timestampMetric(logger *slog.Logger, m JSONMetric, data []byte, pm prometheus.Metric) prometheus.Metric {

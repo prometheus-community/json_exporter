@@ -7,6 +7,31 @@ A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSO
 - [Supported JSONPath Syntax](https://kubernetes.io/docs/reference/kubectl/jsonpath/)
 - [Examples configurations](/examples)
 
+## ✨ New Feature: Dynamic Object Keys
+
+Extract dynamic object keys as Prometheus labels using the special JSONPath `{__name__}`:
+
+```yaml
+labels:
+  provider_name: '{__name__}'  # Extracts dynamic object key as label
+```
+
+**Perfect for monitoring APIs with dynamic object structures:**
+- Cloud providers with dynamic instance/account names  
+- Service discovery endpoints with generated names
+- Infrastructure components with environment-specific identifiers
+
+**Example:**
+```json
+{"providers": [{"aws-prod-123": {"ok": true}}, {"gcp-dev-456": {"ok": false}}]}
+```
+
+Generates:
+```
+provider_status{provider_name="aws-prod-123"} 1
+provider_status{provider_name="gcp-dev-456"} 0
+```
+
 ## Example Usage
 
 ```console
