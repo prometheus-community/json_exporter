@@ -3,7 +3,7 @@ modules:
   missing_value_ok:
     metrics:
       - name: example_global_value_missing
-        ignore_missing_values: true
+        allow_missing_key: true
         path: "{ .missing_value }"
 
   missing_value_not_ok:
@@ -15,7 +15,7 @@ modules:
     metrics:
       - name: example_value_in_object_missing
         type: object
-        ignore_missing_values: true
+        allow_missing_key: true
         path: "{.values[0]}"
         values:
           missing_value: "{ .missing_value }"

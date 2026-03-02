@@ -164,17 +164,17 @@ func TestCorrectResponse(t *testing.T) {
 	}
 }
 
-func TestIgnoreMissingValues(t *testing.T) {
+func TestAllowMissingKey(t *testing.T) {
 	tests := []struct {
 		ConfigFile    string
 		ServeFile     string
 		Module        string
 		ShouldSucceed bool
 	}{
-		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_value_ok", true},
-		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_value_not_ok", false},
-		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_object_value_ok", true},
-		{"../test/config/ignore_missing_values.yml", "/serve/good.json", "missing_object_value_not_ok", false},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_value_ok", true},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_value_not_ok", false},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_ok", true},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_not_ok", false},
 	}
 
 	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
