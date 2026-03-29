@@ -1,6 +1,7 @@
 json_exporter
 ========================
-[![CircleCI](https://circleci.com/gh/prometheus-community/json_exporter.svg?style=svg)](https://circleci.com/gh/prometheus-community/json_exporter)
+[![Build Status](https://github.com/prometheus/json_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/prometheus/json_exporter/actions/workflows/ci.yml)
+
 
 A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSONPath.
 
