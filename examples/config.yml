@@ -73,4 +73,3 @@ modules:
     #   content: |
     #     {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
     #   templatize: true
-
