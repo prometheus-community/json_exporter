@@ -21,5 +21,6 @@
             "state": "ACTIVE"
         }
     ],
-    "location": "mars"
+    "location": "mars",
+    "available_memory": "1000 MB"
 }
