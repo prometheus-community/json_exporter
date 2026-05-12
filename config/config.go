@@ -17,7 +17,7 @@ import (
 	"os"
 
 	pconfig "github.com/prometheus/common/config"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 )
 
 // Metric contains values that define a metric
