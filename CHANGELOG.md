@@ -1,3 +1,7 @@
+## Unreleased
+
+* [BUGFIX] Render numeric label and value paths without scientific notation #367
+
 ## 0.7.0 / 2025-02-05
 
 * [CHANGE] adopt slog, drop go-kit/log #334
