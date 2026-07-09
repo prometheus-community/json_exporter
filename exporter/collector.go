@@ -16,7 +16,10 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
+	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/prometheus-community/json_exporter/config"
@@ -147,20 +150,80 @@ func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutpu
 		return "", false, err
 	}
 
-	if err := j.Execute(buf, jsonData); err != nil {
+	if enableJSONOutput {
+		if err := j.Execute(buf, jsonData); err != nil {
+			logger.Error("Failed to execute jsonpath", "err", err, "path", path, "data", data)
+			return "", false, err
+		}
+		if buf.Len() == 0 && allowMissingKey {
+			return "", true, nil
+		}
+
+		// Since we are finally going to extract only float64, unquote if necessary
+		if res, err := jsonpath.UnquoteExtend(buf.String()); err == nil {
+			return res, false, nil
+		}
+
+		return buf.String(), false, nil
+	}
+
+	// For the non-JSON-output path we render the results ourselves instead of
+	// relying on jsonpath's default text formatting, which prints float64 values
+	// (all JSON numbers unmarshal to float64) using %v and thus renders large
+	// integers in scientific notation, e.g. "1.655371e+06" instead of "1655371".
+	fullResults, err := j.FindResults(jsonData)
+	if err != nil {
 		logger.Error("Failed to execute jsonpath", "err", err, "path", path, "data", data)
 		return "", false, err
 	}
-	if buf.Len() == 0 && allowMissingKey {
+	out := resultsToText(fullResults)
+	if len(out) == 0 && allowMissingKey {
 		return "", true, nil
 	}
 
 	// Since we are finally going to extract only float64, unquote if necessary
-	if res, err := jsonpath.UnquoteExtend(buf.String()); err == nil {
+	if res, err := jsonpath.UnquoteExtend(out); err == nil {
 		return res, false, nil
 	}
 
-	return buf.String(), false, nil
+	return out, false, nil
+}
+
+// resultsToText renders jsonpath results as space-separated text, formatting
+// float64 leaf values without scientific notation.
+func resultsToText(fullResults [][]reflect.Value) string {
+	buf := new(bytes.Buffer)
+	for _, results := range fullResults {
+		for i, r := range results {
+			text := resultToText(r)
+			if i != len(results)-1 {
+				text = append(text, ' ')
+			}
+			buf.Write(text)
+		}
+	}
+	return buf.String()
+}
+
+func resultToText(r reflect.Value) []byte {
+	v := r
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+	switch v.Kind() {
+	case reflect.Map, reflect.Array, reflect.Slice, reflect.Struct:
+		if b, err := json.Marshal(v.Interface()); err == nil {
+			return b
+		}
+	case reflect.Float64, reflect.Float32:
+		return []byte(strconv.FormatFloat(v.Float(), 'f', -1, 64))
+	}
+	if !v.IsValid() {
+		return []byte("<nil>")
+	}
+	var b bytes.Buffer
+	fmt.Fprint(&b, v.Interface())
+	return b.Bytes()
 }
 
 // Returns the list of labels created from the list of provided json paths
