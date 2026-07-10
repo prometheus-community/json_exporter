@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	configFile  = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").ExistingFile()
+	configFile  = kingpin.Flag("config.file", "JSON exporter configuration file.").Default("config.yml").String()
 	configCheck = kingpin.Flag("config.check", "If true validate the config file and then exit.").Default("false").Bool()
 	metricsPath = kingpin.Flag(
 		"web.telemetry-path",

@@ -1,3 +1,7 @@
+## Unreleased
+
+* [BUGFIX] Do not require a config file to be present when running `--version` or `--help` #292
+
 ## 0.7.0 / 2025-02-05
 
 * [CHANGE] adopt slog, drop go-kit/log #334
