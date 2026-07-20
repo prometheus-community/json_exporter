@@ -63,9 +63,15 @@ func SanitizeValue(s string) (float64, error) {
 func SanitizeIntValue(s string) (int64, error) {
 	var err error
 	var value int64
+	var cleanedString = s
 	var resultErr string
 
-	if value, err = strconv.ParseInt(s, 10, 64); err == nil {
+	// Check if the string ends with "u64" and strip it off.
+	if strings.HasSuffix(s, "u64") {
+		cleanedString = strings.TrimSuffix(s, "u64")
+	}
+
+	if value, err = strconv.ParseInt(cleanedString, 10, 64); err == nil {
 		return value, nil
 	}
 	resultErr = fmt.Sprintf("%s", err)
