@@ -177,6 +177,10 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	}
 
 	for key, value := range f.module.Headers {
+		if strings.EqualFold(key, "Host") {
+			req.Host = value
+			continue
+		}
 		req.Header.Add(key, value)
 	}
 	if req.Header.Get("Accept") == "" {
