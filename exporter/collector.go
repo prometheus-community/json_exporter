@@ -56,7 +56,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 		for _, transformer := range m.Transformers {
 			transformedData, err := transformer.Transform(jsonData)
 			if err != nil {
-				level.Error(mc.Logger).Log("msg", "Transformation failed", "err", err)
+				mc.Logger.Error("msg", "Transformation failed", "err", err)
 				continue
 			}
 			jsonData = transformedData
