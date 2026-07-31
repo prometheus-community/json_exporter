@@ -90,8 +90,6 @@ modules:
         endpoint_name: '{.endpointName}'
       values:
         health: '{.endpointHealthy}'  # Extract only the `healthy` field
-
-
     - name: pool
       type: object
       help: Health of the pools
