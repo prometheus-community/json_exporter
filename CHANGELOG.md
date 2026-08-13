@@ -1,3 +1,7 @@
+## 0.8.0 / 2026-08-12
+
+* [FEATURE] Add `allow_missing_key` option to metrics #414
+
 ## 0.7.0 / 2025-02-05
 
 * [CHANGE] adopt slog, drop go-kit/log #334
