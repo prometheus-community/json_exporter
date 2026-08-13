@@ -1,7 +1,6 @@
 ## 0.8.0 / 2026-08-12
 
 * [FEATURE] Add `allow_missing_key` option to metrics #414
-* [CHANGE] Update yaml library to `go.yaml.in/yaml/v2` #437
 
 ## 0.7.0 / 2025-02-05
 
