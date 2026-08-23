@@ -16,6 +16,7 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -33,6 +34,7 @@ type JSONMetricCollector struct {
 type JSONMetric struct {
 	Desc                   *prometheus.Desc
 	Type                   config.ScrapeType
+	EngineType             config.EngineType
 	KeyJSONPath            string
 	ValueJSONPath          string
 	LabelsJSONPaths        []string
@@ -51,7 +53,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, m := range mc.JSONMetrics {
 		switch m.Type {
 		case config.ValueScrape:
-			value, missing, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, false, m.AllowMissingKey)
+			mc.Logger.Debug("Extracting value for metric", "path", m.KeyJSONPath, "metric", m.Desc)
+			value, missing, err := extractValue(mc.Logger, m.EngineType, mc.Data, m.KeyJSONPath, false, m.AllowMissingKey)
 			if err != nil {
 				mc.Logger.Error("Failed to extract value for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 				continue
@@ -65,7 +68,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					m.Desc,
 					m.ValueType,
 					floatValue,
-					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+					extractLabels(mc.Logger, m.EngineType, mc.Data, m.LabelsJSONPaths)...,
 				)
 				ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
 			} else {
@@ -74,7 +77,8 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 
 		case config.ObjectScrape:
-			values, missing, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true, m.AllowMissingKey)
+			mc.Logger.Debug("Extracting object for metric", "path", m.KeyJSONPath, "metric", m.Desc)
+			values, missing, err := extractValue(mc.Logger, m.EngineType, mc.Data, m.KeyJSONPath, true, m.AllowMissingKey)
 			if err != nil {
 				mc.Logger.Error("Failed to extract json objects for metric", "err", err, "metric", m.Desc)
 				continue
@@ -91,7 +95,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 						mc.Logger.Error("Failed to marshal data to json", "path", m.ValueJSONPath, "err", err, "metric", m.Desc, "data", data)
 						continue
 					}
-					value, missing, err := extractValue(mc.Logger, jdata, m.ValueJSONPath, false, m.AllowMissingKey)
+					value, missing, err := extractValue(mc.Logger, m.EngineType, jdata, m.ValueJSONPath, false, m.AllowMissingKey)
 					if err != nil {
 						mc.Logger.Error("Failed to extract value for metric", "path", m.ValueJSONPath, "err", err, "metric", m.Desc)
 						continue
@@ -105,7 +109,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 							m.Desc,
 							m.ValueType,
 							floatValue,
-							extractLabels(mc.Logger, jdata, m.LabelsJSONPaths)...,
+							extractLabels(mc.Logger, m.EngineType, jdata, m.LabelsJSONPaths)...,
 						)
 						ch <- timestampMetric(mc.Logger, m, jdata, metric)
 					} else {
@@ -114,7 +118,7 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 					}
 				}
 			} else {
-				mc.Logger.Error("Failed to convert extracted objects to json", "err", err, "metric", m.Desc)
+				mc.Logger.Error("Failed to convert extracted objects to json", "value", values, "err", err, "metric", m.Desc)
 				continue
 			}
 		default:
@@ -124,8 +128,22 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+// extractValue returns the value the given expression selects from the data,
+// using the engine the metric is configured with, and a flag telling whether
+// the expression matched nothing while allowMissingKey is set.
+func extractValue(logger *slog.Logger, engine config.EngineType, data []byte, path string, enableJSONOutput, allowMissingKey bool) (string, bool, error) {
+	switch engine {
+	case config.EngineTypeJSONPath:
+		return extractValueJSONPath(logger, data, path, enableJSONOutput, allowMissingKey)
+	case config.EngineTypeCEL:
+		return extractValueCEL(logger, data, path, enableJSONOutput, allowMissingKey)
+	default:
+		return "", false, fmt.Errorf("unknown engine type: %q", engine)
+	}
+}
+
 // Returns the last matching value at the given json path and a flag if the path was missing
-func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutput, allowMissingKey bool) (string, bool, error) {
+func extractValueJSONPath(logger *slog.Logger, data []byte, path string, enableJSONOutput, allowMissingKey bool) (string, bool, error) {
 	var jsonData interface{}
 	buf := new(bytes.Buffer)
 
@@ -164,10 +182,10 @@ func extractValue(logger *slog.Logger, data []byte, path string, enableJSONOutpu
 }
 
 // Returns the list of labels created from the list of provided json paths
-func extractLabels(logger *slog.Logger, data []byte, paths []string) []string {
+func extractLabels(logger *slog.Logger, engine config.EngineType, data []byte, paths []string) []string {
 	labels := make([]string, len(paths))
 	for i, path := range paths {
-		if result, _, err := extractValue(logger, data, path, false, false); err == nil {
+		if result, _, err := extractValue(logger, engine, data, path, false, false); err == nil {
 			labels[i] = result
 		} else {
 			logger.Error("Failed to extract label value", "err", err, "path", path, "data", data)
@@ -180,7 +198,7 @@ func timestampMetric(logger *slog.Logger, m JSONMetric, data []byte, pm promethe
 	if m.EpochTimestampJSONPath == "" {
 		return pm
 	}
-	ts, missing, err := extractValue(logger, data, m.EpochTimestampJSONPath, false, m.AllowMissingKey)
+	ts, missing, err := extractValue(logger, m.EngineType, data, m.EpochTimestampJSONPath, false, m.AllowMissingKey)
 	if err != nil {
 		logger.Error("Failed to extract timestamp for metric", "path", m.KeyJSONPath, "err", err, "metric", m.Desc)
 		return pm

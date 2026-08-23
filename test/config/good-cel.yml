@@ -1,0 +1,28 @@
+---
+# Same metrics as good.yml, scraped with CEL instead of JSONPath. Both configs
+# are expected to produce test/response/good.txt.
+modules:
+  default:
+    metrics:
+    - name: example_global_value
+      engine: cel
+      path: '.counter'
+      help: Example of a top-level global value scrape in the json
+      valuetype: gauge
+      labels:
+        environment: '"beta"'              # static label
+        location: '"planet-" + .location'  # dynamic label
+
+    - name: example_value
+      engine: cel
+      type: object
+      help: Example of sub-level value scrapes from a json
+      path: '.values.filter(v, v.state == "ACTIVE")'
+      valuetype: counter
+      labels:
+        environment: '"beta"' # static label
+        id: '.id'             # dynamic label
+      values:
+        active: 1        # static value
+        count: '.count'  # dynamic value
+        boolean: '.some_boolean'

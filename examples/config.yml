@@ -9,27 +9,59 @@ modules:
       help: Example of a top-level global value scrape in the json
       labels:
         environment: beta # static label
-        location: 'planet-{.location}'          # dynamic label
+        location: 'planet-{ .location }' # dynamic label
+
+    - name: example_cel_global_value
+      engine: cel
+      path: '.counter'
+      help: Example of a top-level global value scrape in the json using cel
+      valuetype: 'gauge'
+      labels:
+        environment: '"beta"'              # static label: a CEL string literal
+        location: '"planet-" + .location'  # dynamic label
+
+    # The timestamp is looked up in the same document as the value, so a
+    # top-level timestamp can only be used by a value scrape.
     - name: example_timestamped_value
-      type: object
-      path: '{ .values[?(@.state == "INACTIVE")] }'
-      epochTimestamp: '{ .timestamp }'
+      path: '{ .values[?(@.state == "INACTIVE")].count }'
+      epochTimestamp: '{ .timestamp }' # milliseconds since the epoch
       help: Example of a timestamped value scrape in the json
       labels:
         environment: beta # static label
-      values:
-        count: '{.count}' # dynamic value
+
+    - name: example_cel_timestamped_value
+      engine: cel
+      path: '.values.filter(v, v.state == "INACTIVE")[0].count'
+      epochTimestamp: '.timestamp' # milliseconds since the epoch
+      help: Example of a timestamped value scrape in the json
+      labels:
+        environment: '"beta"' # static label
+
     - name: example_value
       type: object
       help: Example of sub-level value scrapes from a json
-      path: '{.values[?(@.state == "ACTIVE")]}'
+      path: '{ .values[?(@.state == "ACTIVE")] }'
       labels:
         environment: beta # static label
-        id: '{.id}'       # dynamic label
+        id: '{ .id }'       # dynamic label
       values:
         active: 1         # static value
-        count: '{.count}' # dynamic value
-        boolean: '{.some_boolean}'
+        count: '{ .count }' # dynamic value
+        boolean: '{ .some_boolean }'
+
+    - name: example_cel_value
+      type: object
+      engine: cel
+      help: Example of sub-level value scrapes from a json
+      path: '.values.filter(v, v.state == "ACTIVE")'
+      labels:
+        environment: '"beta"' # static label
+        id: '.id'             # dynamic label
+      values:
+        active: 1        # static value
+        count: '.count'  # dynamic value
+        boolean: '.some_boolean'
+
     - name: example_missing_key
       path: '{ .missing_key }'
       allow_missing_key: true
@@ -37,6 +69,15 @@ modules:
         Example of allowing a missing key.
         This metric will not be reported if the path .missing_value is not
         present, and an error message will not be generated.
+
+    - name: example_cel_missing_key
+      engine: cel
+      path: '.missing_key'
+      allow_missing_key: true
+      help: >-
+        Example of allowing a missing key with CEL.
+        This metric will not be reported if the document has no member
+        'missing_key', and an error message will not be generated.
 
   animals:
     metrics:
@@ -49,6 +90,17 @@ modules:
         predator: '{ .predator }'
       values:
         population: '{ .population }'
+
+    - name: animal_cel
+      type: object
+      engine: cel
+      help: Example of top-level lists in a separate module
+      path: 'root' # the whole document, here a top-level list
+      labels:
+        name: '.noun'
+        predator: '.predator'
+      values:
+        population: '.population'
 
     ## HTTP connection configurations can be set in 'modules.<module_name>.http_client_config' field. For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
     #

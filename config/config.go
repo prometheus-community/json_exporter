@@ -14,6 +14,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	pconfig "github.com/prometheus/common/config"
@@ -22,15 +23,42 @@ import (
 
 // Metric contains values that define a metric
 type Metric struct {
-	Name            string
-	Path            string
-	Labels          map[string]string
-	Type            ScrapeType
-	ValueType       ValueType
-	EpochTimestamp  string
-	Help            string
-	Values          map[string]string
-	AllowMissingKey bool `yaml:"allow_missing_key,omitempty"`
+	Name            string            `yaml:"name"`
+	Engine          EngineType        `yaml:"engine,omitempty"`
+	Path            string            `yaml:"path"`
+	Labels          map[string]string `yaml:"labels,omitempty"`
+	Type            ScrapeType        `yaml:"type,omitempty"`
+	ValueType       ValueType         `yaml:"valuetype,omitempty"`
+	EpochTimestamp  string            `yaml:"epochTimestamp,omitempty"`
+	Help            string            `yaml:"help,omitempty"`
+	Values          map[string]string `yaml:"values,omitempty"`
+	AllowMissingKey bool              `yaml:"allow_missing_key,omitempty"`
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler. Before 'epochTimestamp' got an
+// explicit tag, the field was keyed by its lowercased name, so configs using
+// 'epochtimestamp' keep working.
+func (m *Metric) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// The local type drops the methods of Metric, so unmarshalling into it does
+	// not call back into here.
+	type metric Metric
+	var parsed metric
+	if err := unmarshal(&parsed); err != nil {
+		return err
+	}
+
+	if parsed.EpochTimestamp == "" {
+		var legacy struct {
+			EpochTimestamp string `yaml:"epochtimestamp"`
+		}
+		if err := unmarshal(&legacy); err != nil {
+			return err
+		}
+		parsed.EpochTimestamp = legacy.EpochTimestamp
+	}
+
+	*m = Metric(parsed)
+	return nil
 }
 
 type ScrapeType string
@@ -45,7 +73,15 @@ type ValueType string
 const (
 	ValueTypeGauge   ValueType = "gauge"
 	ValueTypeCounter ValueType = "counter"
-	ValueTypeUntyped ValueType = "untyped"
+	ValueTypeUntyped ValueType = "untyped" // default
+)
+
+// EngineType is the expression language a metric is scraped with.
+type EngineType string
+
+const (
+	EngineTypeJSONPath EngineType = "jsonpath" // default
+	EngineTypeCEL      EngineType = "cel"
 )
 
 // Config contains multiple modules.
@@ -89,6 +125,15 @@ func LoadConfig(configPath string) (Config, error) {
 			}
 			if module.Metrics[i].ValueType == "" {
 				module.Metrics[i].ValueType = ValueTypeUntyped
+			}
+			if module.Metrics[i].Engine == "" {
+				module.Metrics[i].Engine = EngineTypeJSONPath
+			}
+			switch module.Metrics[i].Engine {
+			case EngineTypeJSONPath, EngineTypeCEL:
+			default:
+				return config, fmt.Errorf("unknown engine %q for metric %q, must be one of %q or %q",
+					module.Metrics[i].Engine, module.Metrics[i].Name, EngineTypeJSONPath, EngineTypeCEL)
 			}
 		}
 	}

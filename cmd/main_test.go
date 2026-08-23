@@ -138,6 +138,8 @@ func TestCorrectResponse(t *testing.T) {
 	}{
 		{"../test/config/good.yml", "/serve/good.json", "../test/response/good.txt", true},
 		{"../test/config/good.yml", "/serve/repeat-metric.json", "../test/response/good.txt", false},
+		{"../test/config/good-cel.yml", "/serve/good.json", "../test/response/good.txt", true},
+		{"../test/config/good-cel.yml", "/serve/repeat-metric.json", "../test/response/good.txt", false},
 	}
 
 	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
@@ -175,6 +177,10 @@ func TestAllowMissingKey(t *testing.T) {
 		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_value_not_ok", false},
 		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_ok", true},
 		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_not_ok", false},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_value_ok_cel", true},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_value_not_ok_cel", false},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_ok_cel", true},
+		{"../test/config/allow_missing_key.yml", "/serve/good.json", "missing_object_value_not_ok_cel", false},
 	}
 
 	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
