@@ -48,6 +48,38 @@ func TestSanitizeValue(t *testing.T) {
 	}
 }
 
+func TestSanitizeIntValue(t *testing.T) {
+	tests := []struct {
+		Input          string
+		ExpectedOutput int64
+		ShouldSucceed  bool
+	}{
+		{"1657568506", 1657568506, true},
+		{"-1657568506", -1657568506, true},
+		// A JSON number decodes to a float64, which the JSONPath engine renders
+		// in exponent notation once it grows large enough.
+		{"1.657568506e+09", 1657568506, true},
+		{"1657568506.0", 1657568506, true},
+		{"1.5", 0, false},
+		{"1e+400", 0, false},
+		{"abcd", 0, false},
+		{"", 0, false},
+	}
+
+	for i, test := range tests {
+		actualOutput, err := SanitizeIntValue(test.Input)
+		if err != nil && test.ShouldSucceed {
+			t.Fatalf("Integer sanitization test %d failed with an unexpected error.\nINPUT:\n%q\nERR:\n%s", i, test.Input, err)
+		}
+		if err == nil && !test.ShouldSucceed {
+			t.Fatalf("Integer sanitization test %d succeeded unexpectedly.\nINPUT:\n%q\nGOT:\n%d", i, test.Input, actualOutput)
+		}
+		if test.ShouldSucceed && actualOutput != test.ExpectedOutput {
+			t.Fatalf("Integer sanitization test %d fails unexpectedly.\nGOT:\n%d\nEXPECTED:\n%d", i, actualOutput, test.ExpectedOutput)
+		}
+	}
+}
+
 func TestSanitizeValueNaN(t *testing.T) {
 	actualOutput, err := SanitizeValue("<nil>")
 	if err != nil {

@@ -70,6 +70,13 @@ func SanitizeIntValue(s string) (int64, error) {
 	}
 	resultErr = fmt.Sprintf("%s", err)
 
+	// Every JSON number decodes to a float64, which the JSONPath engine renders
+	// in exponent notation once it grows large enough, e.g. '1.657568506e+09'.
+	if floatValue, err := strconv.ParseFloat(s, 64); err == nil &&
+		floatValue == math.Trunc(floatValue) && math.Abs(floatValue) < math.MaxInt64 {
+		return int64(floatValue), nil
+	}
+
 	return value, errors.New(resultErr)
 }
 
@@ -79,6 +86,9 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 		valueType prometheus.ValueType
 	)
 	for _, metric := range c.Metrics {
+		if err := compileMetricExpressions(metric); err != nil {
+			return nil, err
+		}
 		switch metric.ValueType {
 		case config.ValueTypeGauge:
 			valueType = prometheus.GaugeValue
@@ -102,6 +112,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					variableLabels,
 					nil,
 				),
+				EngineType:             metric.Engine,
 				KeyJSONPath:            metric.Path,
 				LabelsJSONPaths:        variableLabelsValues,
 				ValueType:              valueType,
@@ -125,6 +136,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 						variableLabels,
 						nil,
 					),
+					EngineType:             metric.Engine,
 					KeyJSONPath:            metric.Path,
 					ValueJSONPath:          valuePath,
 					LabelsJSONPaths:        variableLabelsValues,
@@ -139,6 +151,31 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 		}
 	}
 	return metrics, nil
+}
+
+// compileMetricExpressions compiles the expressions of a CEL metric up front,
+// so that a broken expression is reported when the config is checked instead of
+// on every scrape. The compiled programs are cached and reused while scraping.
+func compileMetricExpressions(metric config.Metric) error {
+	if metric.Engine != config.EngineTypeCEL {
+		return nil
+	}
+	expressions := []string{metric.Path}
+	if metric.EpochTimestamp != "" {
+		expressions = append(expressions, metric.EpochTimestamp)
+	}
+	for _, expression := range metric.Labels {
+		expressions = append(expressions, expression)
+	}
+	for _, expression := range metric.Values {
+		expressions = append(expressions, expression)
+	}
+	for _, expression := range expressions {
+		if _, err := compileCELExpression(expression); err != nil {
+			return fmt.Errorf("metric %q: %w", metric.Name, err)
+		}
+	}
+	return nil
 }
 
 type JSONFetcher struct {

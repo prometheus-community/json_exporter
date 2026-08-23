@@ -68,6 +68,13 @@ func Run() {
 	}
 	logger.Info("Loaded config file", "config", string(configJSON))
 
+	for name, module := range config.Modules {
+		if _, err := exporter.CreateMetricsList(module); err != nil {
+			logger.Error("Failed to create metrics list from config", "module", name, "err", err)
+			os.Exit(1)
+		}
+	}
+
 	if *configCheck {
 		os.Exit(0)
 	}
@@ -123,7 +130,9 @@ func probeHandler(w http.ResponseWriter, r *http.Request, logger *slog.Logger, c
 
 	metrics, err := exporter.CreateMetricsList(config.Modules[module])
 	if err != nil {
-		logger.Error("Failed to create metrics list from config", "err", err)
+		logger.Error("Failed to create metrics list from config", "module", module, "err", err)
+		http.Error(w, "Failed to create metrics list from config: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	jsonMetricCollector := exporter.JSONMetricCollector{JSONMetrics: metrics}
