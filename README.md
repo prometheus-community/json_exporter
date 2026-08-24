@@ -1,6 +1,6 @@
 json_exporter
 ========================
-[![Build Status](https://github.com/prometheus/json_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/prometheus/json_exporter/actions/workflows/ci.yml)
+[![Build Status](https://github.com/prometheus-community/json_exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/prometheus-community/json_exporter/actions/workflows/ci.yml)
 
 
 A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSONPath.
@@ -125,4 +125,3 @@ Then `curl "http://exporter:7979/probe?target=http://scrape_target:8080/test/dat
 ```console
 $ docker run -v $PWD/examples/config.yml:/config.yml quay.io/prometheuscommunity/json-exporter --config.file=/config.yml
 ```
-
