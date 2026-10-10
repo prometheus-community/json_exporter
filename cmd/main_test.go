@@ -28,7 +28,7 @@ import (
 )
 
 func TestFailIfSelfSignedCA(t *testing.T) {
-	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	target := httptest.NewTLSServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 	}))
 	defer target.Close()
 
@@ -55,7 +55,7 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 				},
 			}},
 	}
-	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	target := httptest.NewTLSServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 	}))
 	defer target.Close()
 
@@ -72,7 +72,7 @@ func TestSucceedIfSelfSignedCA(t *testing.T) {
 }
 
 func TestDefaultModule(t *testing.T) {
-	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	target := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 	}))
 	defer target.Close()
 

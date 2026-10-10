@@ -7,10 +7,6 @@ linters:
     errcheck:
       exclude-functions:
         - (net/http.ResponseWriter).Write
-    revive:
-      rules:
-        - name: unused-parameter
-          disabled: true
   exclusions:
     generated: lax
     presets:
