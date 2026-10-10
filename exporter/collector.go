@@ -1,4 +1,4 @@
-// Copyright 2020 The Prometheus Authors
+// Copyright 2025 abgharbi
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package exporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -36,6 +37,7 @@ type JSONMetric struct {
 	KeyJSONPath            string
 	ValueJSONPath          string
 	LabelsJSONPaths        []string
+	ValuesMap              map[string]float64
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
 	AllowMissingKey        bool
@@ -60,18 +62,18 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 				continue
 			}
 
-			if floatValue, err := SanitizeValue(value); err == nil {
-				metric := prometheus.MustNewConstMetric(
-					m.Desc,
-					m.ValueType,
-					floatValue,
-					extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
-				)
-				ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
-			} else {
+			floatValue, err := resolveValue(value, m.ValuesMap)
+			if err != nil {
 				mc.Logger.Error("Failed to convert extracted value to float64", "path", m.KeyJSONPath, "value", value, "err", err, "metric", m.Desc)
 				continue
 			}
+			metric := prometheus.MustNewConstMetric(
+				m.Desc,
+				m.ValueType,
+				floatValue,
+				extractLabels(mc.Logger, mc.Data, m.LabelsJSONPaths)...,
+			)
+			ch <- timestampMetric(mc.Logger, m, mc.Data, metric)
 
 		case config.ObjectScrape:
 			values, missing, err := extractValue(mc.Logger, mc.Data, m.KeyJSONPath, true, m.AllowMissingKey)
@@ -86,6 +88,34 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 			var jsonData []interface{}
 			if err := json.Unmarshal([]byte(values), &jsonData); err == nil {
 				for _, data := range jsonData {
+					// Flat JSON object with {@key}/{@value} iteration (e.g. {"app1":5,"app2":3})
+					if mapData, ok := data.(map[string]interface{}); ok && m.ValueJSONPath == "{@value}" {
+						for k, v := range mapData {
+							floatValue, err := interfaceToFloat64(v)
+							if err != nil {
+								mc.Logger.Error("Failed to convert map value to float64", "key", k, "value", v, "err", err, "metric", m.Desc)
+								continue
+							}
+							labels := make([]string, len(m.LabelsJSONPaths))
+							for i, lp := range m.LabelsJSONPaths {
+								switch lp {
+								case "{@key}":
+									labels[i] = k
+								case "{@value}":
+									labels[i] = fmt.Sprintf("%v", v)
+								default:
+									jdata, _ := json.Marshal(data)
+									if result, _, err := extractValue(mc.Logger, jdata, lp, false, m.AllowMissingKey); err == nil {
+										labels[i] = result
+									}
+								}
+							}
+							metric := prometheus.MustNewConstMetric(m.Desc, m.ValueType, floatValue, labels...)
+							ch <- metric
+						}
+						continue
+					}
+
 					jdata, err := json.Marshal(data)
 					if err != nil {
 						mc.Logger.Error("Failed to marshal data to json", "path", m.ValueJSONPath, "err", err, "metric", m.Desc, "data", data)
@@ -174,6 +204,31 @@ func extractLabels(logger *slog.Logger, data []byte, paths []string) []string {
 		}
 	}
 	return labels
+}
+
+// resolveValue converts a string to float64, consulting the ValuesMap first.
+func resolveValue(s string, valuesMap map[string]float64) (float64, error) {
+	if v, ok := valuesMap[s]; ok {
+		return v, nil
+	}
+	return SanitizeValue(s)
+}
+
+// interfaceToFloat64 converts an unmarshalled JSON value to float64.
+func interfaceToFloat64(v interface{}) (float64, error) {
+	switch val := v.(type) {
+	case float64:
+		return val, nil
+	case bool:
+		if val {
+			return 1.0, nil
+		}
+		return 0.0, nil
+	case string:
+		return SanitizeValue(val)
+	default:
+		return 0, fmt.Errorf("cannot convert %T to float64", v)
+	}
 }
 
 func timestampMetric(logger *slog.Logger, m JSONMetric, data []byte, pm prometheus.Metric) prometheus.Metric {
