@@ -470,3 +470,28 @@ func TestBodyPostQuery(t *testing.T) {
 		target.Close()
 	}
 }
+func TestInvalidRegexConfig(t *testing.T) {
+	_, err := config.LoadConfig("../test/config/invalidConfig.yml")
+	if err != nil {
+		return
+	}
+
+	target := httptest.NewServer(http.FileServer(http.Dir("../test")))
+	defer target.Close()
+
+	c, err := config.LoadConfig("../test/config/invalidConfig.yml")
+	if err != nil {
+		t.Fatalf("Failed to load config file")
+	}
+
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL+"/serve/good.json", nil)
+	recorder := httptest.NewRecorder()
+	logBuffer := strings.Builder{}
+	promslogConfig := &promslog.Config{Writer: &logBuffer}
+	logger := promslog.New(promslogConfig)
+	probeHandler(recorder, req, logger, c)
+
+	if logBuffer.Len() == 0 {
+		t.Fatal("Expected error log for invalid regex, but got none")
+	}
+}
