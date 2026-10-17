@@ -58,6 +58,19 @@ $ docker run --rm -it -p 9090:9090 -v $PWD/examples/prometheus.yml:/etc/promethe
 ```
 Then head over to http://localhost:9090/graph?g0.range_input=1h&g0.expr=example_value_active&g0.tab=1 or http://localhost:9090/targets to check the scraped metrics or the targets.
 
+## Metric `type` vs `valuetype`
+
+Each metric accepts two independent fields:
+
+| Field | Purpose | Values |
+| --- | --- | --- |
+| `type` | How the JSONPath is scraped | `value` (default), `object` |
+| `valuetype` | The Prometheus metric type | `untyped` (default), `gauge`, `counter` |
+
+Setting `type: counter` (or `type: gauge`) is a common mistake — that selects
+the scrape mode, not the Prometheus type. Use `valuetype: counter` instead.
+Invalid values for either field are rejected when the config is loaded.
+
 ## Using custom timestamps
 
 This exporter allows you to use a field of the metric as the (unix/epoch) timestamp for the data as an int64. However, this may lead to unexpected behaviour, as the prometheus implements a [Staleness](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness) mechanism.
