@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
+	"regexp"
 	"time"
 
 	"github.com/prometheus-community/json_exporter/config"
@@ -38,6 +39,7 @@ type JSONMetric struct {
 	LabelsJSONPaths        []string
 	ValueType              prometheus.ValueType
 	EpochTimestampJSONPath string
+	IncludeRegex           *regexp.Regexp
 	AllowMissingKey        bool
 }
 
@@ -59,7 +61,12 @@ func (mc JSONMetricCollector) Collect(ch chan<- prometheus.Metric) {
 			if missing {
 				continue
 			}
-
+		if m.IncludeRegex != nil {
+			if value = m.IncludeRegex.FindString(value); value == "" {
+				mc.Logger.Error("No matching for this pattern", "pattern", m.IncludeRegex.String())
+				continue
+			}
+		}
 			if floatValue, err := SanitizeValue(value); err == nil {
 				metric := prometheus.MustNewConstMetric(
 					m.Desc,
