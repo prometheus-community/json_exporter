@@ -14,6 +14,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	pconfig "github.com/prometheus/common/config"
@@ -78,17 +79,36 @@ func LoadConfig(configPath string) (Config, error) {
 		return config, err
 	}
 
-	// Complete Defaults
-	for _, module := range config.Modules {
+	// Complete defaults and validate.
+	for name, module := range config.Modules {
 		for i := 0; i < len(module.Metrics); i++ {
-			if module.Metrics[i].Type == "" {
-				module.Metrics[i].Type = ValueScrape
+			metric := &module.Metrics[i]
+
+			if metric.Type == "" {
+				metric.Type = ValueScrape
 			}
-			if module.Metrics[i].Help == "" {
-				module.Metrics[i].Help = module.Metrics[i].Name
+			if metric.Help == "" {
+				metric.Help = metric.Name
 			}
-			if module.Metrics[i].ValueType == "" {
-				module.Metrics[i].ValueType = ValueTypeUntyped
+			if metric.ValueType == "" {
+				metric.ValueType = ValueTypeUntyped
+			}
+
+			switch metric.Type {
+			case ValueScrape, ObjectScrape:
+			default:
+				return config, fmt.Errorf("module %q, metric %q: invalid 'type' %q: 'type' selects how the path is scraped and must be %q or %q. To set the Prometheus metric type, use 'valuetype' (%q, %q or %q) instead",
+					name, metric.Name, metric.Type,
+					ValueScrape, ObjectScrape,
+					ValueTypeGauge, ValueTypeCounter, ValueTypeUntyped)
+			}
+
+			switch metric.ValueType {
+			case ValueTypeGauge, ValueTypeCounter, ValueTypeUntyped:
+			default:
+				return config, fmt.Errorf("module %q, metric %q: invalid 'valuetype' %q: must be %q, %q or %q",
+					name, metric.Name, metric.ValueType,
+					ValueTypeGauge, ValueTypeCounter, ValueTypeUntyped)
 			}
 		}
 	}
