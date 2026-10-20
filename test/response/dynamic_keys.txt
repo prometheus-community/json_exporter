@@ -1,0 +1,17 @@
+# HELP example_alpha_failing_region_up Regions matching key_filter and value_filter
+# TYPE example_alpha_failing_region_up untyped
+example_alpha_failing_region_up{href="/admin/region/2/",region="alpha__svc_b"} 0
+# HELP example_batch_worker_up Workers matching key_filter
+# TYPE example_batch_worker_up untyped
+example_batch_worker_up{worker="batch_eu@batch-worker-5c4b7d9f8-ghi56"} 1
+example_batch_worker_up{worker="batch_us@batch-worker-6f8d5c4b7-jkl78"} 0
+# HELP example_failing_region_up Regions matching value_filter
+# TYPE example_failing_region_up untyped
+example_failing_region_up{region="alpha__svc_b"} 0
+example_failing_region_up{region="beta__svc_b"} 0
+# HELP example_worker_up Dynamic key and nested value
+# TYPE example_worker_up untyped
+example_worker_up{worker="api@api-worker-7d9f8c6b5-abc12"} 1
+example_worker_up{worker="api@api-worker-7d9f8c6b5-def34"} 1
+example_worker_up{worker="batch_eu@batch-worker-5c4b7d9f8-ghi56"} 1
+example_worker_up{worker="batch_us@batch-worker-6f8d5c4b7-jkl78"} 0

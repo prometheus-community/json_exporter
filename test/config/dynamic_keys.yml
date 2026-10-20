@@ -1,0 +1,44 @@
+modules:
+  default:
+    metrics:
+    # Dynamic key as label, field of the nested object as value
+    - name: example_worker
+      type: object
+      path: '{.workers[*]}'
+      help: Dynamic key and nested value
+      labels:
+        worker: '{__name__}'
+      values:
+        up: '{.ok}'
+    # Filter on the dynamic key
+    - name: example_batch_worker
+      type: object
+      path: '{.workers[*]}'
+      key_filter: '^batch_'
+      help: Workers matching key_filter
+      labels:
+        worker: '{__name__}'
+      values:
+        up: '{.ok}'
+    # Filter on the extracted value
+    - name: example_failing_region
+      type: object
+      path: '{.regions[*]}'
+      value_filter: '^false$'
+      help: Regions matching value_filter
+      labels:
+        region: '{__name__}'
+      values:
+        up: '{.ok}'
+    # Both filters, plus a regular JSONPath label next to the dynamic key
+    - name: example_alpha_failing_region
+      type: object
+      path: '{.regions[*]}'
+      key_filter: '^alpha__'
+      value_filter: '^false$'
+      help: Regions matching key_filter and value_filter
+      labels:
+        region: '{__name__}'
+        href: '{.href}'
+      values:
+        up: '{.ok}'
