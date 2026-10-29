@@ -235,10 +235,10 @@ func renderBody(logger *slog.Logger, body config.Body, tplValues url.Values) (me
 		tpl = tpl.Option("missingkey=zero")
 		var b strings.Builder
 		if err := tpl.Execute(&b, tplValues); err != nil {
-			logger.Error("Failed to render template with values", "err", err, "tempalte", body.Content)
+			logger.Error("Failed to render template with values", "err", err, "template", body.Content)
 
 			// `tplValues` can contain sensitive values, so log it only when in debug mode
-			logger.Debug("Failed to render template with values", "err", err, "tempalte", body.Content, "values", tplValues, "rendered_body", b.String())
+			logger.Debug("Failed to render template with values", "err", err, "template", body.Content, "values", tplValues, "rendered_body", b.String())
 			return
 		}
 		br = strings.NewReader(b.String())
