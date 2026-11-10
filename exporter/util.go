@@ -22,6 +22,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -89,6 +90,9 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 		}
 		switch metric.Type {
 		case config.ValueScrape:
+			if metric.KeyFilter != "" || metric.ValueFilter != "" {
+				return nil, fmt.Errorf("key_filter and value_filter are only supported for type 'object', metric: '%s'", metric.Name)
+			}
 			var variableLabels, variableLabelsValues []string
 			for k, v := range metric.Labels {
 				variableLabels = append(variableLabels, k)
@@ -110,6 +114,14 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 			}
 			metrics = append(metrics, jsonMetric)
 		case config.ObjectScrape:
+			keyFilter, err := compileFilter(metric.KeyFilter)
+			if err != nil {
+				return nil, fmt.Errorf("invalid key_filter for metric '%s': %w", metric.Name, err)
+			}
+			valueFilter, err := compileFilter(metric.ValueFilter)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value_filter for metric '%s': %w", metric.Name, err)
+			}
 			for subName, valuePath := range metric.Values {
 				name := MakeMetricName(metric.Name, subName)
 				var variableLabels, variableLabelsValues []string
@@ -131,6 +143,8 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 					ValueType:              valueType,
 					EpochTimestampJSONPath: metric.EpochTimestamp,
 					AllowMissingKey:        metric.AllowMissingKey,
+					KeyFilter:              keyFilter,
+					ValueFilter:            valueFilter,
 				}
 				metrics = append(metrics, jsonMetric)
 			}
@@ -139,6 +153,13 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 		}
 	}
 	return metrics, nil
+}
+
+func compileFilter(expr string) (*regexp.Regexp, error) {
+	if expr == "" {
+		return nil, nil
+	}
+	return regexp.Compile(expr)
 }
 
 type JSONFetcher struct {

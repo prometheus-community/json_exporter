@@ -31,6 +31,10 @@ type Metric struct {
 	Help            string
 	Values          map[string]string
 	AllowMissingKey bool `yaml:"allow_missing_key,omitempty"`
+	// Object scrape only: regex on the dynamic object key ({__name__}) and on
+	// the extracted value. Entries that do not match are skipped.
+	KeyFilter   string `yaml:"key_filter,omitempty"`
+	ValueFilter string `yaml:"value_filter,omitempty"`
 }
 
 type ScrapeType string

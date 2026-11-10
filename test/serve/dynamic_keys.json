@@ -1,0 +1,18 @@
+{
+  "databases": [
+    {"default": {"ok": true}}
+  ],
+  "storage": {"ok": true},
+  "workers": [
+    {"api@api-worker-7d9f8c6b5-abc12": {"ok": true}},
+    {"api@api-worker-7d9f8c6b5-def34": {"ok": true}},
+    {"batch_eu@batch-worker-5c4b7d9f8-ghi56": {"ok": true}},
+    {"batch_us@batch-worker-6f8d5c4b7-jkl78": {"ok": false, "error": "Connection timed out"}}
+  ],
+  "regions": [
+    {"alpha__svc_a": {"ok": true, "error": null, "href": "/admin/region/1/"}},
+    {"alpha__svc_b": {"ok": false, "error": "Timeout contacting 10.0.0.10", "href": "/admin/region/2/"}},
+    {"beta__svc_b": {"ok": false, "error": "Timeout contacting 10.0.1.10", "href": "/admin/region/3/"}},
+    {"beta__svc_a": {"ok": true, "error": null, "href": "/admin/region/4/"}}
+  ]
+}
