@@ -22,3 +22,9 @@ modules:
         active: 1      # static value
         count: '{.count}' # dynamic value
         boolean: '{.some_boolean}'
+
+    - name: example_regex_value
+      path: '{.availableMemory}'
+      help: Example of a regex filtered value scrape in the json
+      valuetype: gauge
+      includeregex: ^\d*\.?\d*

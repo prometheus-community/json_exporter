@@ -1,6 +1,9 @@
 # HELP example_global_value Example of a top-level global value scrape in the json
 # TYPE example_global_value gauge
 example_global_value{environment="beta",location="planet-mars"} 1234
+# HELP example_regex_value Example of a regex filtered value scrape in the json
+# TYPE example_regex_value gauge
+example_regex_value 5
 # HELP example_value_active Example of sub-level value scrapes from a json
 # TYPE example_value_active counter
 example_value_active{environment="beta",id="id-A"} 1

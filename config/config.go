@@ -30,6 +30,7 @@ type Metric struct {
 	EpochTimestamp  string
 	Help            string
 	Values          map[string]string
+	IncludeRegex    string
 	AllowMissingKey bool `yaml:"allow_missing_key,omitempty"`
 }
 
