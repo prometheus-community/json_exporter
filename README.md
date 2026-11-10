@@ -70,7 +70,7 @@ TLS configuration supported by this exporter can be found at [exporter-toolkit/w
 
 ## Sending body content for HTTP `POST`
 
-If `modules.<module_name>.body` paramater is set in config, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
+If `modules.<module_name>.body` parameter is set in config, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
 ```yaml
 body:
   content: |
