@@ -169,8 +169,7 @@ func (f *JSONFetcher) FetchJSON(endpoint string) ([]byte, error) {
 	}
 
 	var req *http.Request
-	req, err = http.NewRequest(f.method, endpoint, f.body)
-	req = req.WithContext(f.ctx)
+	req, err = http.NewRequestWithContext(f.ctx, f.method, endpoint, f.body)
 	if err != nil {
 		f.logger.Error("Failed to create request", "err", err)
 		return nil, err

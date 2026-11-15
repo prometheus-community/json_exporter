@@ -1,3 +1,7 @@
+## master / unreleased
+
+* [BUGFIX] Return an error instead of panicking when the probe target is not a valid URL #493
+
 ## 0.8.0 / 2026-08-12
 
 * [FEATURE] Add `allow_missing_key` option to metrics #414
