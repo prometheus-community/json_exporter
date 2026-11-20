@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -104,6 +105,17 @@ func TestFailIfTargetMissing(t *testing.T) {
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("Fail if 'target' query parameter missing test fails unexpectedly, got %s", body)
+	}
+}
+
+func TestInvalidTargetURL(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://example.com/foo?target="+url.QueryEscape("http://[::1"), nil)
+	recorder := httptest.NewRecorder()
+	probeHandler(recorder, req, promslog.NewNopLogger(), config.Config{Modules: map[string]config.Module{"default": {}}})
+
+	resp := recorder.Result()
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("Invalid target test fails unexpectedly, expected 503, got %d", resp.StatusCode)
 	}
 }
 
