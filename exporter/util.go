@@ -1,4 +1,4 @@
-// Copyright 2020 The Prometheus Authors
+// Copyright 2025 abgharbi
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -94,6 +94,12 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 				variableLabels = append(variableLabels, k)
 				variableLabelsValues = append(variableLabelsValues, v)
 			}
+			valuesMap := make(map[string]float64, len(metric.Values))
+			for k, v := range metric.Values {
+				if f, err := strconv.ParseFloat(v, 64); err == nil {
+					valuesMap[k] = f
+				}
+			}
 			jsonMetric := JSONMetric{
 				Type: config.ValueScrape,
 				Desc: prometheus.NewDesc(
@@ -104,6 +110,7 @@ func CreateMetricsList(c config.Module) ([]JSONMetric, error) {
 				),
 				KeyJSONPath:            metric.Path,
 				LabelsJSONPaths:        variableLabelsValues,
+				ValuesMap:              valuesMap,
 				ValueType:              valueType,
 				EpochTimestampJSONPath: metric.EpochTimestamp,
 				AllowMissingKey:        metric.AllowMissingKey,
