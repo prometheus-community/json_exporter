@@ -16,6 +16,7 @@ package config
 import (
 	"os"
 
+	"github.com/prometheus-community/json_exporter/transformers"
 	pconfig "github.com/prometheus/common/config"
 	"go.yaml.in/yaml/v2"
 )
@@ -31,6 +32,7 @@ type Metric struct {
 	Help            string
 	Values          map[string]string
 	AllowMissingKey bool `yaml:"allow_missing_key,omitempty"`
+	Transformations []transformers.TransformationConfig
 }
 
 type ScrapeType string
