@@ -1,4 +1,14 @@
 ---
+## Each metric under 'metrics' accepts two distinct "type" fields:
+##
+##   type:      how the path is scraped. One of 'value' (default, the path
+##              points at a single value) or 'object' (the path points at an
+##              object/list and sub-values are extracted via 'values').
+##   valuetype: the Prometheus metric type. One of 'untyped' (default),
+##              'gauge' or 'counter'.
+##
+## Note: 'type: counter' / 'type: gauge' is a common mistake - use 'valuetype'
+## for that. See https://github.com/prometheus-community/json_exporter/issues/393
 modules:
   default:
     headers:
