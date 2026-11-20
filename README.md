@@ -68,6 +68,26 @@ This exporter allows you to use a field of the metric as the (unix/epoch) timest
 
 TLS configuration supported by this exporter can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.9.0/docs/web-configuration.md)
 
+## Custom request headers
+
+You can set per-module request headers with `modules.<module_name>.headers`.
+
+The `Host` header is handled specially. If a module config contains `Host`, the exporter sets the request host authority (`req.Host`) to that value. This is useful when probing an IP target while routing by hostname through a gateway or proxy.
+
+When probing HTTPS endpoints by IP and overriding host authority, also set TLS server name under `http_client_config.tls_config.server_name` so SNI and certificate validation use the same hostname.
+
+Example:
+
+```yaml
+modules:
+  ip_with_host_routing:
+    headers:
+      Host: my-service.example.com
+    http_client_config:
+      tls_config:
+        server_name: my-service.example.com
+```
+
 ## Sending body content for HTTP `POST`
 
 If `modules.<module_name>.body` paramater is set in config, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.

@@ -307,6 +307,39 @@ func TestHTTPHeaders(t *testing.T) {
 	}
 }
 
+func TestHostHeaderSetsRequestHost(t *testing.T) {
+	hostHeader := "integration-service.preventicedev.com"
+
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Host; got != hostHeader {
+			t.Errorf("Unexpected request host: expected %q, got %q", hostHeader, got)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer target.Close()
+
+	req := httptest.NewRequest("GET", "http://example.com/foo"+"?module=default&target="+target.URL, nil)
+	recorder := httptest.NewRecorder()
+	c := config.Config{
+		Modules: map[string]config.Module{
+			"default": {
+				Headers: map[string]string{
+					"Host": hostHeader,
+				},
+			},
+		},
+	}
+
+	probeHandler(recorder, req, promslog.NewNopLogger(), c)
+
+	resp := recorder.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Setting host header failed unexpectedly. Got: %s", body)
+	}
+}
+
 // Test is the body template is correctly rendered
 func TestBodyPostTemplate(t *testing.T) {
 	bodyTests := []struct {
