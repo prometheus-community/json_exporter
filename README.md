@@ -8,6 +8,73 @@ A [prometheus](https://prometheus.io/) exporter which scrapes remote JSON by JSO
 - [Supported JSONPath Syntax](https://kubernetes.io/docs/reference/kubectl/jsonpath/)
 - [Examples configurations](/examples)
 
+## Dynamic object keys
+
+Extract dynamic object keys as Prometheus labels using the special JSONPath `{__name__}`:
+
+```yaml
+labels:
+  provider_name: '{__name__}'  # Extracts dynamic object key as label
+```
+
+**Perfect for monitoring APIs with dynamic object structures:**
+- Cloud providers with dynamic instance/account names  
+- Service discovery endpoints with generated names
+- Infrastructure components with environment-specific identifiers
+
+**Example:**
+```json
+{"providers": [{"aws-prod-123": {"ok": true}}, {"gcp-dev-456": {"ok": false}}]}
+```
+
+Generates:
+```
+provider_status{provider_name="aws-prod-123"} 1
+provider_status{provider_name="gcp-dev-456"} 0
+```
+
+### Anatomy of a dynamic-key object
+
+Given `examples/health-data.json`, the path `{.regions[*]}` yields one object per list item:
+
+```
+{ "alpha__svc_b" : { "ok": false, "error": "Timeout contacting 10.0.0.10", "href": "/admin/region/2/" } }
+    └──── {__name__} ────┘   └──────────────────────────── value (nested object) ───────────────────────────┘
+                                     └ {.ok}                └ {.error} (don't use as label)   └ {.href}
+```
+
+Each item must be an object with a **single** key. Items with several keys are ambiguous and are never matched by `key_filter`; items that are not objects are skipped when `key_filter` is set.
+
+| What you want | Where it goes | Expression | Result for the object above |
+|---|---|---|---|
+| The dynamic key | `labels` | `'{__name__}'` | `region="alpha__svc_b"` |
+| A field of the value as a label | `labels` | `'{.href}'` | `href="/admin/region/2/"` |
+| A field of the value as the metric value | `values` | `'{.ok}'` | `0` (`true`/`false` become `1`/`0`) |
+| Keep only some keys | `key_filter` | regex on the key | `'^alpha__'` keeps this entry |
+| Keep only some values | `value_filter` | regex on the extracted value | `'^false$'` keeps this entry |
+
+`key_filter` and `value_filter` apply to `type: object` metrics only (using them on a `type: value` metric is a config error) and can be combined. `value_filter` is matched against the value of each entry in `values` (the string before it is converted to a number, so booleans match `true`/`false`). Entries that do not match are skipped. Do not use free-text fields such as `error` as labels: they can be large and have unbounded cardinality.
+
+Ready-to-run examples (value, dynamic key, key filter, value filter, both filters, mixed labels, non-2xx status) are in [`examples/health-config.yml`](examples/health-config.yml), using [`examples/health-data.json`](examples/health-data.json):
+
+```yaml
+- name: region
+  type: object
+  path: '{.regions[*]}'
+  key_filter: '^alpha__'    # only the "alpha" group
+  value_filter: '^false$'     # only failing entries
+  labels:
+    region: '{__name__}'
+  values:
+    up: '{.ok}'
+```
+
+```
+region_up{region="alpha__svc_b"} 0
+```
+
+If the endpoint returns a non-2xx status together with a valid JSON body (e.g. 418 when any check fails), list the accepted codes with `valid_status_codes: [200, 418]` in the module.
+
 ## Example Usage
 
 ```console

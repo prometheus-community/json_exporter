@@ -1,0 +1,100 @@
+# Examples for scraping health endpoints whose objects use dynamic keys.
+# Sample payload: examples/health-data.json
+#
+#   ./json_exporter --config.file examples/health-config.yml &
+#   python3 -m http.server 8000 &
+#   curl "http://localhost:7979/probe?module=<module>&target=http://localhost:8000/examples/health-data.json"
+modules:
+  # Fixed key, plain value: no dynamic keys involved.
+  # -> storage_ok 1
+  static_value:
+    metrics:
+    - name: storage_ok
+      path: '{.storage.ok}'
+      help: Storage health
+
+  # Dynamic key as label + value from the nested object.
+  # {.workers[*]} yields one object per list item, e.g. {"api@api-worker-7d9f8c6b5-abc12": {"ok": true}}
+  #   - '{__name__}' -> the object key       ("api@api-worker-7d9f8c6b5-abc12")
+  #   - '{.ok}'      -> a field of the value ({"ok": true} -> 1)
+  # -> worker_up{worker="api@api-worker-7d9f8c6b5-abc12"} 1
+  dynamic_key_and_value:
+    metrics:
+    - name: worker
+      type: object
+      path: '{.workers[*]}'
+      help: Worker health
+      labels:
+        worker: '{__name__}'
+      values:
+        up: '{.ok}'
+
+  # Filter by dynamic key (regex on the key). Keeps only the batch workers.
+  # -> worker_up{worker="batch_eu@..."} 1, worker_up{worker="batch_us@..."} 0
+  filter_by_key:
+    metrics:
+    - name: worker
+      type: object
+      path: '{.workers[*]}'
+      key_filter: '^batch_'
+      help: Batch worker health
+      labels:
+        worker: '{__name__}'
+      values:
+        up: '{.ok}'
+
+  # Filter by value (regex on the extracted value). Keeps only failing regions.
+  # -> region_up{region="alpha__svc_b"} 0, region_up{region="beta__svc_b"} 0
+  filter_by_value:
+    metrics:
+    - name: region
+      type: object
+      path: '{.regions[*]}'
+      value_filter: '^false$'
+      help: Failing regions
+      labels:
+        region: '{__name__}'
+      values:
+        up: '{.ok}'
+
+  # Both filters: failing regions of the "alpha" group only.
+  # -> region_up{region="alpha__svc_b"} 0
+  filter_by_key_and_value:
+    metrics:
+    - name: region
+      type: object
+      path: '{.regions[*]}'
+      key_filter: '^alpha__'
+      value_filter: '^false$'
+      help: failing alpha regions
+      labels:
+        region: '{__name__}'
+      values:
+        up: '{.ok}'
+
+  # Mix a dynamic key with a regular JSONPath label.
+  # -> region_up{href="/admin/region/1/",region="alpha__svc_a"} 1, ...
+  mixed_labels:
+    metrics:
+    - name: region
+      type: object
+      path: '{.regions[*]}'
+      help: Region health
+      labels:
+        region: '{__name__}'
+        href: '{.href}'
+      values:
+        up: '{.ok}'
+
+  # Endpoint answers with a non-2xx status (e.g. 418 when any check fails) but still returns JSON.
+  accept_non_2xx:
+    valid_status_codes: [200, 418]
+    metrics:
+    - name: worker
+      type: object
+      path: '{.workers[*]}'
+      help: Worker health
+      labels:
+        worker: '{__name__}'
+      values:
+        up: '{.ok}'
